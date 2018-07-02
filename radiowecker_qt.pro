@@ -35,12 +35,12 @@ INSTALLS                               += target
 CONFIG(release, debug|release) {
   DEFINES                              += QT_NO_DEBUG_OUTPUT
   DESTDIR                              = rout
-  LIBS                                 += -L$$PWD/rlib -llibsoundtouch_qt
+  LIBS                                 += -L$$PWD/rlib -lsoundtouch_qt
   DEFINES                              += QT_NO_DEBUG_OUTPUT
 }
 CONFIG(debug, debug|release) {
   DESTDIR                              = dout
-  LIBS                                 += -L$$PWD/dlib -llibsoundtouch_qt
+  LIBS                                 += -L$$PWD/dlib -lsoundtouch_qt
 }
 
 MOC_DIR                                = moc
@@ -55,10 +55,17 @@ SOURCES += \
     src/main.cpp \
     src/config/AppConfigClass.cpp \
     src/logging/Logger.cpp \
-    src/logging/loggingthreshold.cpp
+    src/logging/loggingthreshold.cpp \
+    src/config/singlealertconfig.cpp \
+    src/config/globalconfig.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
     src/config/AppConfigClass.hpp \
     src/logging/Logger.hpp \
-    src/logging/loggingthreshold.hpp
+    src/logging/loggingthreshold.hpp \
+    src/config/singlealertconfig.hpp \
+    src/config/globalconfig.hpp
+
+DISTFILES += \
+    alert_daemon.ini

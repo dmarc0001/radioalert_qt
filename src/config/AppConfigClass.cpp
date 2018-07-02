@@ -6,23 +6,18 @@
 
 namespace radioalert
 {
-  const QString AppConfigClass::constLogGroupName = "logger";
-  const QString AppConfigClass::constLogFileKey = "logFileName";
-  const QString AppConfigClass::constLogToConsoleKey = "logToConsole";
   const QString AppConfigClass::constNoData = "-";
   const QString AppConfigClass::constAppGroupName = "application";
-  const QString AppConfigClass::constAppThresholdKey = "threshold";
-  const LoggingThreshold AppConfigClass::defaultAppThreshold = LoggingThreshold::LG_WARNING;
 
   /**
    * @brief LoggerClass::LoggerClass Der Konstruktor mit Name der Konfigdatei im Programmverzeichnis
    * @param cfg
    */
-  AppConfigClass::AppConfigClass( void ) : configFile( QCoreApplication::applicationName() + ".ini" ), logToConsole( true )
+  AppConfigClass::AppConfigClass( void ) : configFileName( QCoreApplication::applicationName() + ".ini" )
   {
   }
 
-  AppConfigClass::AppConfigClass( const QString &configFileName ) : configFile( configFileName ), logToConsole( true )
+  AppConfigClass::AppConfigClass( const QString &configFileName ) : configFileName( configFileName )
   {
   }
 
@@ -32,13 +27,15 @@ namespace radioalert
     saveSettings();
   }
 
-  /**
-   * @brief AppConfigClass::getConfigFile Gibt das konfigurierte CONFIG File zurück (aus loadSettings)
-   * @return
-   */
-  QString AppConfigClass::getConfigFile( void ) const
+  QString AppConfigClass::getLogfileName( void ) const
   {
-    return ( configFile );
+    return ( configFileName );
+  }
+
+  void AppConfigClass::setConfigFileName( const QString &fileName )
+  {
+    configFileName = fileName;
+    loadSettings();
   }
 
   /**
@@ -47,15 +44,15 @@ namespace radioalert
    */
   bool AppConfigClass::loadSettings( void )
   {
-    qDebug().noquote() << "CONFIG: <" + configFile + ">";
-    QSettings settings( configFile, QSettings::IniFormat );
-    if ( !loadLogSettings( settings ) )
+    qDebug().noquote() << "CONFIG: <" + configFileName + ">";
+    QSettings settings( configFileName, QSettings::IniFormat );
+    if ( !globalConfig.loadSettings( settings ) )
+      globalConfig.makeDefaultSettings( settings );
+
+    //
+    if ( !loadAlertSettings( settings ) )
     {
-      makeDefaultLogSettings( settings );
-    }
-    if ( !loadAppSettings( settings ) )
-    {
-      makeAppDefaultSettings( settings );
+      makeAlertDefaultSettings( settings );
     }
     return ( true );
   }
@@ -68,17 +65,9 @@ namespace radioalert
   bool AppConfigClass::loadSettings( QString &cFile )
   {
     qDebug().noquote() << "load settings from" << cFile;
-    configFile = cFile;
-    QSettings settings( configFile, QSettings::IniFormat );
-    if ( !loadLogSettings( settings ) )
-    {
-      makeDefaultLogSettings( settings );
-    }
-    if ( !loadAppSettings( settings ) )
-    {
-      makeAppDefaultSettings( settings );
-    }
-    return ( true );
+    configFileName = cFile;
+    QSettings settings( configFileName, QSettings::IniFormat );
+    return loadSettings();
   }
 
   /**
@@ -95,39 +84,15 @@ namespace radioalert
     //
     // die Logeinstellungen sichern
     //
-    if ( !saveLogSettings( settings ) )
+    if ( !saveGlobalSettings( settings ) )
     {
       retVal = false;
     }
-    if ( !saveAppSettings( settings ) )
+    if ( !saveAlertSettings( settings ) )
     {
       retVal = false;
     }
     return ( retVal );
-  }
-
-  /*###########################################################################
-   ############################################################################
-   #### Logger Einstellungen                                               ####
-   ############################################################################
-  ###########################################################################*/
-
-  /**
-   * @brief AppConfigClass::getLogfileName Gib den Namen der LOGDATEI zurück
-   * @return
-   */
-  QString AppConfigClass::getLogfileName( void ) const
-  {
-    return logfileName;
-  }
-
-  /**
-   * @brief AppConfigClass::setLogfileName Setze den Dateinamen des LOGFILES
-   * @param value
-   */
-  void AppConfigClass::setLogfileName( const QString &value )
-  {
-    logfileName = value;
   }
 
   /**
@@ -135,18 +100,18 @@ namespace radioalert
    * @param settings
    * @return
    */
-  bool AppConfigClass::loadLogSettings( QSettings &settings )
+  bool AppConfigClass::loadGlobalSettings( QSettings &settings )
   {
     bool retval = true;
     qDebug().noquote() << "";
     //
     // Öffne die Gruppe Logeinstellungen als allererstes
     //
-    settings.beginGroup( constLogGroupName );
+    settings.beginGroup( constGlobalGroupName );
     //
     // Lese den Dateinamen aus
     //
-    logfileName = settings.value( constLogFileKey, AppConfigClass::constNoData ).toString();
+    logfileName = settings.value( constGlobalLogFileKey, AppConfigClass::constNoData ).toString();
     if ( QString::compare( logfileName, constNoData ) == 0 )
     {
       // Nicht gefunden -> Fehler markieren
@@ -156,12 +121,12 @@ namespace radioalert
     //
     // Lese die Loggerstufe
     //
-    logThreshold = LoggingUtils::thresholdNames.value( settings.value( constAppThresholdKey, "warning" ).toString().toLower() );
+    logThreshold = LoggingUtils::thresholdNames.value( settings.value( constGlobalLogThresholdKey, "warning" ).toString().toLower() );
     qDebug().noquote().nospace() << "logThreshold: <" << LoggingUtils::thresholdNames.key( logThreshold ) << ">";
     //
     // loggen zur Konsole
     //
-    logToConsole = settings.value( constLogToConsoleKey, "true" ).toBool();
+    logToConsole = settings.value( constGlobalLogToConsoleKey, "true" ).toBool();
     qDebug().noquote().nospace() << "logToConsole: <" << logToConsole << ">";
     //
     // Ende der Gruppe
@@ -177,19 +142,19 @@ namespace radioalert
    * @brief AppConfigClass::makeDefaultLogSettings Erzeuge VORGABE Einstellungen für LOGGING
    * @param settings
    */
-  void AppConfigClass::makeDefaultLogSettings( QSettings &settings )
+  void AppConfigClass::makeDefaultGlobalSettings( QSettings &settings )
   {
     qDebug().noquote() << "AppConfigClass::makeDefaultLogSettings()";
     //
     // Öffne die Gruppe Logeinstellungen
     //
-    settings.beginGroup( constLogGroupName );
+    settings.beginGroup( constGlobalGroupName );
     //
     // defaultwerte setzten
     //
     logfileName = QCoreApplication::applicationName() + ".log";
-    settings.setValue( constLogFileKey, logfileName );
-    settings.setValue( constLogToConsoleKey, true );
+    settings.setValue( constGlobalLogFileKey, logfileName );
+    settings.setValue( constGlobalLogToConsoleKey, true );
     //
     // Ende der Gruppe
     //
@@ -201,16 +166,16 @@ namespace radioalert
    * @param settings
    * @return
    */
-  bool AppConfigClass::saveLogSettings( QSettings &settings )
+  bool AppConfigClass::saveGlobalSettings( QSettings &settings )
   {
     qDebug().noquote().nospace() << "save to: <" + configFile + ">";
     //
     // Öffne die Gruppe Logeinstellungen
     //
-    settings.beginGroup( constLogGroupName );
+    settings.beginGroup( constGlobalGroupName );
     //
-    settings.setValue( constLogFileKey, logfileName );
-    settings.setValue( constLogToConsoleKey, logToConsole );
+    settings.setValue( constGlobalLogFileKey, logfileName );
+    settings.setValue( constGlobalLogToConsoleKey, logToConsole );
     //
     // Ende der Gruppe
     //
@@ -244,7 +209,7 @@ namespace radioalert
     return ( logThreshold );
   }
 
-  bool AppConfigClass::loadAppSettings( QSettings &settings )
+  bool AppConfigClass::loadAlertSettings( QSettings &settings )
   {
     bool retval = true;
     qDebug().noquote() << "";
@@ -262,7 +227,7 @@ namespace radioalert
     return ( retval );
   }
 
-  void AppConfigClass::makeAppDefaultSettings( QSettings &settings )
+  void AppConfigClass::makeAlertDefaultSettings( QSettings &settings )
   {
     qDebug().noquote() << "";
     //
@@ -273,14 +238,14 @@ namespace radioalert
     // defaultwerte setzten
     //
     logThreshold = defaultAppThreshold;
-    settings.setValue( constAppThresholdKey, LoggingUtils::thresholdNames.key( logThreshold ) );
+    settings.setValue( constGlobalLogThresholdKey, LoggingUtils::thresholdNames.key( logThreshold ) );
     //
     // Ende der Gruppe
     //
     settings.endGroup();
   }
 
-  bool AppConfigClass::saveAppSettings( QSettings &settings )
+  bool AppConfigClass::saveAlertSettings( QSettings &settings )
   {
     //
     // Öffne die Gruppe Logeinstellungen
@@ -288,7 +253,7 @@ namespace radioalert
     settings.beginGroup( constAppGroupName );
     //
     qDebug().noquote().nospace() << "threshold: <" << LoggingUtils::thresholdNames.key( logThreshold ) << ">";
-    settings.setValue( constAppThresholdKey, LoggingUtils::thresholdNames.key( logThreshold ) );
+    settings.setValue( constGlobalLogThresholdKey, LoggingUtils::thresholdNames.key( logThreshold ) );
     //
     // Ende der Gruppe
     //
