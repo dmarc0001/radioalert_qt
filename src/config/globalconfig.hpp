@@ -52,6 +52,7 @@ namespace radioalert
     public:
     explicit GlobalConfig( void );
     bool loadSettings( QSettings &settings );
+    bool saveSettings( QSettings &settings );
     bool makeDefaultSettings( QSettings &settings );
     //
     // GETTER/SETTER

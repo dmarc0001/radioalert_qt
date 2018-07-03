@@ -31,25 +31,8 @@ namespace radioalert
     bool saveSettings( void );                          //! sichere Einstellungen
     QString getLogfileName( void ) const;               //! Name der configdatei ausgeben
     void setConfigFileName( const QString &fileName );  //! name der configfdatei setzten
-    /*
-    QString getConfigFile( void ) const;              //! Name der Konfigdatei ausgeben
-    QString getLogfileName( void ) const;             //! Name der Logdatei ausgeben
-    void setLogfileName( const QString &value );      //! Name der Logdatei setzten
-    void setLogThreshold( LoggingThreshold th );      //! setzte Loggingstufe in Config
-    LoggingThreshold getLogTreshold( void );          //! hole Loggingstufe aus config
-    bool getLogToConsole() const;                     //! setze den Wert ob zu Konsole geloggt werden darf
-    void setLogToConsole( bool value );               //! lese den Wert ob zu Konsole geloggt werden darf
-    */
 
     private:
-    // Logeinstellungen
-    bool loadGlobalSettings( QSettings &settings );
-    void makeDefaultGlobalSettings( QSettings &settings );
-    bool saveGlobalSettings( QSettings &settings );
-    // allg. Programmeinstellungen
-    bool loadAlertSettings( QSettings &settings );
-    void makeAlertDefaultSettings( QSettings &settings );
-    bool saveAlertSettings( QSettings &settings );
   };
 }  // namespace radioalert
 #endif  // LOGGERCLASS_HPP

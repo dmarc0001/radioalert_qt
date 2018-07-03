@@ -1,4 +1,5 @@
 #include "globalconfig.hpp"
+#include <QCoreApplication>
 #include <QtDebug>
 
 namespace radioalert
@@ -46,6 +47,7 @@ namespace radioalert
     logFile = settings.value( logFileKey, "" ).toString();
     if ( logFile.isEmpty() || logFile.isNull() )
     {
+      settings.endGroup();
       return ( false );
     }
     qDebug().noquote().nospace() << "log file: <" << logFile << ">";
@@ -128,8 +130,63 @@ namespace radioalert
     return ( retval );
   }
 
+  bool GlobalConfig::saveSettings( QSettings &settings )
+  {
+    qDebug().noquote() << "";
+    qDebug().noquote() << "save globel settings....";
+    settings.beginGroup( groupName );
+    settings.setValue( logFileKey, logFile );
+    settings.setValue( logToConsoleKey, logToConsole );
+    settings.setValue( serverPortKey, serverPort );
+    settings.setValue( serverAddrKey, serverAddr.toString() );
+    settings.setValue( timeZoneKey, timeZone.id() );
+    settings.setValue( raiseVolKey, raiseVol );
+    settings.setValue( networkTimeoutKey, networkTimeout );
+    settings.setValue( autorefreshKey, autorefresh );
+    settings.setValue( guiExtraBottom1Key, guiExtraBottom1 );
+    settings.setValue( guiExtraBottom2Key, guiExtraBottom2 );
+    settings.setValue( loglevelKey, LoggingUtils::thresholdNames.key( loglevel ) );
+    settings.setValue( path1Key, path1 );
+    settings.setValue( path2Key, path2 );
+    settings.setValue( guiHeaderKey, guiHeader );
+    settings.setValue( devicesFileKey, devicesFile );
+    settings.setValue( guiThemeKey, guiTheme );
+    settings.endGroup();
+    return ( true );
+  }
+
   bool GlobalConfig::makeDefaultSettings( QSettings &settings )
   {
+    qDebug().noquote() << "";
+    settings.beginGroup( groupName );
+    //
+    // alle Einstellungen leeren
+    //
+    qDebug().noquote() << "remove old settings, if there one...";
+    settings.remove( logFileKey );
+    settings.remove( logToConsoleKey );
+    settings.remove( serverPortKey );
+    settings.remove( serverAddrKey );
+    settings.remove( timeZoneKey );
+    settings.remove( raiseVolKey );
+    settings.remove( networkTimeoutKey );
+    settings.remove( autorefreshKey );
+    settings.remove( guiExtraBottom1Key );
+    settings.remove( guiExtraBottom2Key );
+    settings.remove( loglevelKey );
+    settings.remove( path1Key );
+    settings.remove( path2Key );
+    settings.remove( guiHeaderKey );
+    settings.remove( devicesFileKey );
+    settings.remove( guiThemeKey );
+    //
+    // neues Logfile setzen
+    //
+    qDebug().noquote() << "set an value for log file...";
+    logFile = QCoreApplication::applicationName().append( ".log" );
+    settings.setValue( logFileKey, logFile );
+    settings.endGroup();
+    return ( loadSettings( settings ) );
   }
 
   qint16 GlobalConfig::getServerPort() const

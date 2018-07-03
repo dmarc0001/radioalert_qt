@@ -53,19 +53,21 @@ message( radio alert daemon version $$VERSION )
 SOURCES += \
     src/maindaemon.cpp \
     src/main.cpp \
-    src/config/AppConfigClass.cpp \
     src/logging/Logger.cpp \
     src/logging/loggingthreshold.cpp \
     src/config/singlealertconfig.cpp \
-    src/config/globalconfig.cpp
+    src/config/globalconfig.cpp \
+    src/config/alertconfig.cpp \
+    src/config/appconfigclass.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
-    src/config/AppConfigClass.hpp \
     src/logging/Logger.hpp \
     src/logging/loggingthreshold.hpp \
     src/config/singlealertconfig.hpp \
-    src/config/globalconfig.hpp
+    src/config/globalconfig.hpp \
+    src/config/alertconfig.hpp \
+    src/config/appconfigclass.hpp
 
 DISTFILES += \
     alert_daemon.ini

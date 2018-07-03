@@ -7,7 +7,7 @@
 #include <QString>
 #include <QTimer>
 #include <memory>
-#include "config/AppConfigClass.hpp"
+#include "config/appconfigclass.hpp"
 #include "logging/Logger.hpp"
 
 namespace radioalert
