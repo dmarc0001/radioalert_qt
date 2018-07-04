@@ -57,7 +57,7 @@ namespace radioalert
       if ( configClass->getLogfileName().length() > 4 )
       {
         // aus dem Objekt erfragen ob konsole geloggt werden soll
-        logToConsole = configClass->getLogToConsole();
+        logToConsole = ( configClass->getGlobalConfig() ).getLogToConsole();
         // Super, das Logfile ist benannt!
         if ( logToConsole )
           qDebug().noquote().nospace() << "START LOGGING...";

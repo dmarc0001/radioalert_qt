@@ -21,6 +21,8 @@ DEFINES                                += VPATCH=$$PATCH
 QT                                     += core
 QT                                     -= gui
 QT                                     += network
+QT                                     += websockets
+QT                                     += xml
 
 CONFIG                                 += stl
 CONFIG                                 += c++11
@@ -35,20 +37,32 @@ INSTALLS                               += target
 CONFIG(release, debug|release) {
   DEFINES                              += QT_NO_DEBUG_OUTPUT
   DESTDIR                              = rout
-  LIBS                                 += -L$$PWD/rlib -lsoundtouch_qt
+  contains(CONFIG, RASPI) {
+    message( RASPI BUILD )
+    LIBS                               += -L$$PWD/rlib/RASPI -lsoundtouch_qt
+  } else {
+    message( LOCAL BUILD )
+    LIBS                               += -L$$PWD/rlib/X86_64 -lsoundtouch_qt
+  }
   DEFINES                              += QT_NO_DEBUG_OUTPUT
 }
 CONFIG(debug, debug|release) {
   DESTDIR                              = dout
-  LIBS                                 += -L$$PWD/dlib -lsoundtouch_qt
+  contains(CONFIG, RASPI) {
+    message( RASPI BUILD )
+    LIBS                               += -L$$PWD/dlib/RASPI -lsoundtouch_qt
+  } else {
+    message( LOCAL BUILD )
+    LIBS                               += -L$$PWD/dlib/X86_64 -lsoundtouch_qt
+  }
 }
+
 
 MOC_DIR                                = moc
 RCC_DIR                                = rcc
 UI_DIR                                 = ui
 
-message( radio alert daemon version $$VERSION )
-
+message( radio alert daemon version: $$VERSION )
 
 SOURCES += \
     src/maindaemon.cpp \

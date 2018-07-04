@@ -17,7 +17,7 @@ namespace radioalert
   {
     appConfig->loadSettings();
     if ( isDebugOverride )
-      appConfig->setLogThreshold( LoggingThreshold::LG_DEBUG );
+      ( appConfig->getGlobalConfig() ).setLoglevel( LoggingThreshold::LG_DEBUG );
     lg = std::shared_ptr< Logger >( new Logger( appConfig ) );
     lg->startLogging();
   }

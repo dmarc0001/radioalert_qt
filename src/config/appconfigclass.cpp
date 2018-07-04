@@ -46,14 +46,19 @@ namespace radioalert
   {
     qDebug().noquote() << "CONFIG: <" + configFileName + ">";
     QSettings settings( configFileName, QSettings::IniFormat );
+    qDebug().noquote() << "load settings from" << configFileName;
+
+    qDebug() << "global settings load...";
     if ( !globalConfig.loadSettings( settings ) )
       globalConfig.makeDefaultSettings( settings );
-
+    qDebug() << "global settings load...OK";
     //
-    if ( !loadAlertSettings( settings ) )
-    {
-      makeAlertDefaultSettings( settings );
-    }
+    // Alarme auslesen mit lokalem Objekt
+    //
+    AlertConfig alConfig;
+    qDebug() << "alert settings load...";
+    alConfig.loadSettings( settings, alerts );
+    qDebug() << "alert settings load...OK";
     return ( true );
   }
 
@@ -64,9 +69,7 @@ namespace radioalert
    */
   bool AppConfigClass::loadSettings( QString &cFile )
   {
-    qDebug().noquote() << "load settings from" << cFile;
     configFileName = cFile;
-    QSettings settings( configFileName, QSettings::IniFormat );
     return loadSettings();
   }
 
@@ -79,7 +82,6 @@ namespace radioalert
     qDebug().noquote() << "...";
     bool retVal = true;
     qDebug().noquote() << "save to <" + configFileName + ">";
-    // QSettings settings(configFile, QSettings::NativeFormat);
     QSettings settings( configFileName, QSettings::IniFormat );
     //
     // die globalen sichern
@@ -88,11 +90,20 @@ namespace radioalert
     {
       retVal = false;
     }
-    if ( !saveAlertSettings( settings ) )
-    {
-      retVal = false;
-    }
+    AlertConfig alConfig;
+    alConfig.saveSettings( settings, alerts );
+    settings.sync();
     return ( retVal );
+  }
+
+  GlobalConfig &AppConfigClass::getGlobalConfig( void )
+  {
+    return ( globalConfig );
+  }
+
+  RadioAlertList &AppConfigClass::getAlertList( void )
+  {
+    return ( alerts );
   }
 
 }  // namespace radioalert

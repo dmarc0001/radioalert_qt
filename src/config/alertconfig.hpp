@@ -28,13 +28,16 @@ namespace radioalert
     static const QString daysKey;
     static const QString locationKey;
     static const QRegExp alertGroupToken;
+    static const QString alertTemplate;
+    static const QString dateFormatToken;
+    static const QString timeFormatToken;
 
     public:
     explicit AlertConfig( void );
     //
-    bool loadSettings( QSettings &settings, QMap< qint8, SingleAlertConfig > *alerts );
-    bool saveSettings( QSettings &settings, QMap< qint8, SingleAlertConfig > *alerts );
-    bool makeDefaultSettings( QSettings &settings, QMap< qint8, SingleAlertConfig > *alerts );
+    bool loadSettings( QSettings &settings, RadioAlertList &alerts );
+    bool saveSettings( QSettings &settings, RadioAlertList &alerts );
+    bool makeDefaultSettings( QSettings &settings, RadioAlertList *alerts );
   };
 }  // namespace radioalert
 #endif  // ALERTCONFIG_HPP

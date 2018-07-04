@@ -6,6 +6,7 @@
 #include <QString>
 #include <QVector>
 #include "../logging/loggingthreshold.hpp"
+#include "alertconfig.hpp"
 #include "globalconfig.hpp"
 #include "singlealertconfig.hpp"
 
@@ -17,10 +18,9 @@ namespace radioalert
     static const QString constNoData;         //! Kennzeichner für keine Daten
     static const QString constAppGroupName;   //! Gruppenname für App Einstellungen
     static const QString constAppTimeoutKey;  //! Einstellung für Watchdog
-    // ab hier die Konfiguration lagern
-    QString configFileName;
+    QString configFileName;                   //! Name der Konfigurationsdatei
     GlobalConfig globalConfig;                //! globale Konfiguration als Objekt
-    QMap< qint8, SingleAlertConfig > alerts;  //! Liste mit Alarmen aus der Konfig
+    RadioAlertList alerts;                    //! Liste mit Alarmen aus der Konfig
 
     public:
     AppConfigClass( void );                             //! Konstruktor
@@ -31,6 +31,8 @@ namespace radioalert
     bool saveSettings( void );                          //! sichere Einstellungen
     QString getLogfileName( void ) const;               //! Name der configdatei ausgeben
     void setConfigFileName( const QString &fileName );  //! name der configfdatei setzten
+    GlobalConfig &getGlobalConfig( void );              //! Referenz auf die globale Konfiguration
+    RadioAlertList &getAlertList( void );               //! Referenz auf die Liste mit Alarmen
 
     private:
   };

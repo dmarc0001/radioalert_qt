@@ -10,6 +10,15 @@
 
 namespace radioalert
 {
+  //
+  // vorwärts deklaration für using...
+  //
+  class SingleAlertConfig;
+  //
+  // für die Lesbarkeit der Sourcen umdefinitionen
+  //
+  using RadioAlertList = QMap< qint8, SingleAlertConfig >;
+
   class SingleAlertConfig
   {
     private:
