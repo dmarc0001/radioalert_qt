@@ -189,6 +189,22 @@ namespace radioalert
     return ( loadSettings( settings ) );
   }
 
+  QByteArray GlobalConfig::serialize( void )
+  {
+    QString serializeStr( QString( "%1" ).arg( serverPort, 5, 10, QChar( '0' ) ) );
+    serializeStr += serverAddr.toString();
+    serializeStr += logToConsole ? "true" : "false";
+    serializeStr += timeZone.id();
+    serializeStr += raiseVol ? "true" : "false";
+    serializeStr += QString( "%1" ).arg( networkTimeout, 5, 10, QChar( '0' ) );
+    serializeStr += QString( "%1" ).arg( autorefresh, 5, 10, QChar( '0' ) );
+    serializeStr += guiExtraBottom1 + guiExtraBottom2 + logFile;
+    serializeStr += QString( "%1" ).arg( static_cast< qint8 >( loglevel ), 2, 10, QChar( '0' ) );
+    serializeStr += path1 + path2 + guiHeader + devicesFile + guiTheme;
+    // Rückmeldung
+    return ( serializeStr.toUtf8() );
+  }
+
   qint16 GlobalConfig::getServerPort() const
   {
     return serverPort;

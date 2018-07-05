@@ -72,7 +72,9 @@ SOURCES += \
     src/config/singlealertconfig.cpp \
     src/config/globalconfig.cpp \
     src/config/alertconfig.cpp \
-    src/config/appconfigclass.cpp
+    src/config/appconfigclass.cpp \
+    src/timeservice/checkforalerttimerthread.cpp \
+    src/utils/configfilenotexistexception.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
@@ -81,7 +83,10 @@ HEADERS += \
     src/config/singlealertconfig.hpp \
     src/config/globalconfig.hpp \
     src/config/alertconfig.hpp \
-    src/config/appconfigclass.hpp
+    src/config/appconfigclass.hpp \
+    src/timeservice/checkforalerttimerthread.hpp \
+    src/main.hpp \
+    src/utils/configfilenotexistexception.hpp
 
 DISTFILES += \
     alert_daemon.ini

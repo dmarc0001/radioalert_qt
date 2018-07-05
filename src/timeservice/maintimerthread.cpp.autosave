@@ -1,0 +1,14 @@
+#include "maintimerthread.hpp"
+
+namespace radioalert
+{
+  MainTimerThread::MainTimerThread( QObject *parent ) : QThread( parent )
+  {
+  }
+
+  void MainTimerThread::run( void )
+  {
+  
+  }
+
+}  // namespace radioalert

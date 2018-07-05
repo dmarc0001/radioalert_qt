@@ -15,7 +15,7 @@ namespace radioalert
   //
   class SingleAlertConfig;
   //
-  // für die Lesbarkeit der Sourcen umdefinitionen
+  // für die Lesbarkeit der Sourcen umdefinieren
   //
   using RadioAlertList = QMap< qint8, SingleAlertConfig >;
 
@@ -35,6 +35,7 @@ namespace radioalert
     QString alertType;         //! Art des Alarms
     QStringList alertDays;     //! an welchen Tagen? (leer == jeden)
     QString alertLocation;     //! Stationsnummer?
+    bool alertIsBusy;          //! ist der alarm gerade in Arbeit?
 
     public:
     explicit SingleAlertConfig( void );
@@ -67,6 +68,9 @@ namespace radioalert
     void setAlertDays( const QStringList &value );
     QString getAlertLocation() const;
     void setAlertLocation( const QString &value );
+    bool getAlertIsBusy() const;
+    void setAlertIsBusy( bool value );
+    QByteArray serialize( void );
   };
 }  // namespace radioalert
 #endif  // SINGLEALERTCONFIG_HPP

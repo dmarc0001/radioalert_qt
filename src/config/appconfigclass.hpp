@@ -1,7 +1,10 @@
 ﻿#ifndef SRC_CONFIG_APPCONFIGCLASS_HPP
 #define SRC_CONFIG_APPCONFIGCLASS_HPP
 
+#include <QCryptographicHash>
 #include <QHash>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QSettings>
 #include <QString>
 #include <QVector>
@@ -21,6 +24,8 @@ namespace radioalert
     QString configFileName;                   //! Name der Konfigurationsdatei
     GlobalConfig globalConfig;                //! globale Konfiguration als Objekt
     RadioAlertList alerts;                    //! Liste mit Alarmen aus der Konfig
+    QMutex configLocker;                      //! verhindert gleichzeitige verändernde zugriffe auf config
+    QByteArray configHashLoad;                //! nach dem Laden odder speichern hash berechnet
 
     public:
     AppConfigClass( void );                             //! Konstruktor
@@ -33,8 +38,10 @@ namespace radioalert
     void setConfigFileName( const QString &fileName );  //! name der configfdatei setzten
     GlobalConfig &getGlobalConfig( void );              //! Referenz auf die globale Konfiguration
     RadioAlertList &getAlertList( void );               //! Referenz auf die Liste mit Alarmen
+    bool isConfigChanged( void );                       //! errechne anhand des crypto-Hashwertes Veränderung
 
     private:
+    QByteArray makeConfigHash( void );  //! erzeuge einen crypto hash für die Daten
   };
 }  // namespace radioalert
 #endif  // LOGGERCLASS_HPP

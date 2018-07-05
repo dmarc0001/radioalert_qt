@@ -29,7 +29,7 @@ namespace radioalert
 
   QString AppConfigClass::getLogfileName( void ) const
   {
-    return ( configFileName );
+    return ( globalConfig.getLogFile() );
   }
 
   void AppConfigClass::setConfigFileName( const QString &fileName )
@@ -44,6 +44,9 @@ namespace radioalert
    */
   bool AppConfigClass::loadSettings( void )
   {
+    // Locken während die config geladen wird
+    QMutexLocker locker( &configLocker );
+
     qDebug().noquote() << "CONFIG: <" + configFileName + ">";
     QSettings settings( configFileName, QSettings::IniFormat );
     qDebug().noquote() << "load settings from" << configFileName;
@@ -59,6 +62,7 @@ namespace radioalert
     qDebug() << "alert settings load...";
     alConfig.loadSettings( settings, alerts );
     qDebug() << "alert settings load...OK";
+    configHashLoad = makeConfigHash();
     return ( true );
   }
 
@@ -79,6 +83,9 @@ namespace radioalert
    */
   bool AppConfigClass::saveSettings( void )
   {
+    // Locken während die config gesichert wird
+    QMutexLocker locker( &configLocker );
+
     qDebug().noquote() << "...";
     bool retVal = true;
     qDebug().noquote() << "save to <" + configFileName + ">";
@@ -93,16 +100,49 @@ namespace radioalert
     AlertConfig alConfig;
     alConfig.saveSettings( settings, alerts );
     settings.sync();
+    configHashLoad = makeConfigHash();
     return ( retVal );
+  }
+
+  bool AppConfigClass::isConfigChanged( void )
+  {
+    if ( configHashLoad == makeConfigHash() )
+      return ( false );
+    return ( true );
+  }
+
+  QByteArray AppConfigClass::makeConfigHash( void )
+  {
+    QByteArray serialized;
+    RadioAlertList::Iterator ral;
+    //
+    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: clobalConfig...";
+    serialized.append( globalConfig.serialize() );
+    //
+    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: alerts...";
+    for ( ral = alerts.begin(); ral != alerts.end(); ++ral )
+    {
+      qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: alerts " << ral.key();
+      serialized.append( ral->serialize() );
+    }
+    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: calculate hash...";
+    QCryptographicHash qhash( QCryptographicHash::Md5 );
+    qhash.reset();
+    qhash.addData( serialized );
+    return ( qhash.result() );
   }
 
   GlobalConfig &AppConfigClass::getGlobalConfig( void )
   {
+    // sperren bis abgeschlossen
+    QMutexLocker locker( &configLocker );
     return ( globalConfig );
   }
 
   RadioAlertList &AppConfigClass::getAlertList( void )
   {
+    // sperren bis abgeschlossen
+    QMutexLocker locker( &configLocker );
     return ( alerts );
   }
 

@@ -89,6 +89,7 @@ namespace radioalert
     void setDevicesFile( const QString &value );
     QString getGuiTheme() const;
     void setGuiTheme( const QString &value );
+    QByteArray serialize( void );
   };
 }  // namespace radioalert
 #endif  // GLOBALCONFIG_HPP
