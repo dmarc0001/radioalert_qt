@@ -22,6 +22,7 @@ namespace radioalert
   class SingleAlertConfig
   {
     private:
+    QString alertName;         //! Name des Alarmes (aus der Konfigurationsdatei)
     QDate alertDate;           //! Datum oder leer
     QTime alertTime;           //! Weckzeit, obligatorisch
     bool alertRaiseVol;        //! Lautstärke langsam steigern?
@@ -70,6 +71,8 @@ namespace radioalert
     void setAlertLocation( const QString &value );
     bool getAlertIsBusy() const;
     void setAlertIsBusy( bool value );
+    QString getAlertName() const;
+    void setAlertName( const QString &value );
     QByteArray serialize( void );
   };
 }  // namespace radioalert

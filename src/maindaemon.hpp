@@ -6,21 +6,25 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QFileInfo>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QObject>
 #include <QString>
 #include <QTime>
 #include <QTimer>
+#include <QVector>
 #include <memory>
 #include "config/appconfigclass.hpp"
 #include "logging/Logger.hpp"
+#include "radioalertthread.hpp"
 #include "utils/configfilenotexistexception.hpp"
 
 namespace radioalert
 {
   //! Zeitintervall für checks ob eine alarmzeit erreicht wurde
-  static const int mainTimerDelay = 1000 * 20;
+  static const int mainTimerDelay = 1000 * 10;
   //! Zeitintervall für test ob die Konfiguration verändert wurde
-  static const int checkConfigTime = 1000 * 90;
+  static const int checkConfigTime = 1000 * 45;
   //! maximaler Abstand des Alarm in die Vergangenheit
   static const int timeDiffToPast = -10;
   //! maximaler Abstand des Alarm in die Zukunfst
@@ -39,12 +43,13 @@ namespace radioalert
     static const QString version;
     std::shared_ptr< Logger > lg;
     QDateTime lastModifiedConfig;
+    QVector< RadioAlertThread * > activeThreads;
 
     public:
     explicit MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent = nullptr );
     ~MainDaemon() override;
-    void reReadConfigFromFile( void );
     void init( void );
+    void reReadConfigFromFile( void );
 
     private:
     bool isAlertDateToday( QDate aData );
@@ -56,6 +61,7 @@ namespace radioalert
     private slots:
     void slotZyclonTimer( void );
     void slotConfigZyclonTimer( void );
+    void slotAlertFinished( RadioAlertThread *theTread );
 
     public slots:
   };

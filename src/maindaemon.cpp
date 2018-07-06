@@ -7,6 +7,12 @@ namespace radioalert
 {
   const QString MainDaemon::version = QString( "%1.%2.%3" ).arg( VMAJOR ).arg( VMINOR ).arg( VPATCH );
 
+  /**
+   * @brief MainDaemon::MainDaemon
+   * @param _configFile
+   * @param _isOverrideDebug
+   * @param parent
+   */
   MainDaemon::MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent )
       : QObject( parent )
       , configFile( _configFile )
@@ -20,9 +26,9 @@ namespace radioalert
     {
       throw ConfigfileNotExistException();
     }
-    appConfig->loadSettings();
     // kein Caching, sonst merkt er nicht wenn es veränderungen gibt
     configFileInfo.setCaching( false );
+    appConfig->loadSettings();
     lastModifiedConfig = configFileInfo.lastModified();
     if ( isDebugOverride )
       ( appConfig->getGlobalConfig() ).setLoglevel( LoggingThreshold::LG_DEBUG );
@@ -36,6 +42,9 @@ namespace radioalert
     zyclon.stop();
   }
 
+  /**
+   * @brief MainDaemon::reReadConfigFromFile
+   */
   void MainDaemon::reReadConfigFromFile( void )
   {
     lg->debug( "MainDaemon::reReadConfigFromFile..." );
@@ -58,6 +67,9 @@ namespace radioalert
     lg->startLogging();
   }
 
+  /**
+   * @brief MainDaemon::init
+   */
   void MainDaemon::init( void )
   {
     lg->info( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
@@ -68,11 +80,6 @@ namespace radioalert
     //
     connect( &zyclon, &QTimer::timeout, this, &MainDaemon::slotZyclonTimer );
     connect( &configZyclon, &QTimer::timeout, this, &MainDaemon::slotConfigZyclonTimer );
-    //
-    // der startet verzögert
-    //
-    zyclon.setInterval( 800 );
-    configZyclon.setInterval( 1600 );
     //
     // Timer intervall hart kodiert in SEKUNDEN
     //
@@ -88,12 +95,16 @@ namespace radioalert
     static qint32 loopcounter = 0;
     qint16 timeDiff = 0;
     //
-    lg->debug( QString( "zycon loop...<%1>" ).arg( loopcounter++ ) );
+    lg->debug( QString( "zycon loop...<%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
     //
     // lies die Timer und stelle fest ob ein Alarm fällig ist
     // kopie der Liste machen
     //
     RadioAlertList alertList = appConfig->getAlertList();
+    //
+    // Konfiguration sperren bis der Test durch ist
+    //
+    QMutexLocker locker( appConfig->getLockMutexPtr() );
     //
     // jetzt feststellen, ob ein Alarm bevorsteht
     //
@@ -131,7 +142,28 @@ namespace radioalert
       //
       if ( timeDiffToPast < timeDiff && timeDiff < timeDiffToFuture )
       {
-        // TODO: sperre config-reload, starte alarm, gebe config frei
+        if ( ali->getAlertIsBusy() )
+        {
+          //
+          // BESETZT!
+          //
+          continue;
+        }
+        //
+        // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
+        //
+        lg->info( "MainDaemon::slotZyclonTimer: start alert thread" );
+        ali->setAlertIsBusy( true );
+        RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, this );
+        // in die Liste der Threads
+        activeThreads.append( newAlert );
+        // verbinde die Endemeldung des Thread mit dem Slot
+        connect( newAlert, &RadioAlertThread::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
+        // und die Selbstzerstörung einleiten, wenn Thread endet
+        connect( newAlert, &RadioAlertThread::finished, newAlert, &RadioAlertThread::deleteLater );
+        // Thread starten
+        newAlert->start();
+        newAlert->startTimer( 1000 );
       }
       else
       {
@@ -143,6 +175,11 @@ namespace radioalert
     // emit close();
   }
 
+  /**
+   * @brief MainDaemon::isAlertDateToday
+   * @param aData
+   * @return
+   */
   bool MainDaemon::isAlertDateToday( QDate aData )
   {
     if ( aData.isValid() && aData == QDate::currentDate() )
@@ -152,6 +189,11 @@ namespace radioalert
     return ( false );
   }
 
+  /**
+   * @brief MainDaemon::howFarIsAlert
+   * @param aTime
+   * @return
+   */
   qint16 MainDaemon::howFarIsAlert( QTime aTime )
   {
     //
@@ -171,6 +213,9 @@ namespace radioalert
     return ( 0 );
   }
 
+  /**
+   * @brief MainDaemon::slotConfigZyclonTimer
+   */
   void MainDaemon::slotConfigZyclonTimer( void )
   {
     lg->debug( "MainDaemon::slotConfigZyclonTimer: check if config changes..." );
@@ -186,7 +231,9 @@ namespace radioalert
     //
     if ( appConfig->isConfigChanged() )
     {
-      lg->info( "configuration was changed, write to file...(TODO)" );
+      lg->info( "configuration was changed, write to file..." );
+      appConfig->saveSettings();
+      lastModifiedConfig = configFileInfo.lastModified();
       return;
     }
 
@@ -195,23 +242,31 @@ namespace radioalert
     {
       lg->debug(
           QString( "MainDaemon::slotConfigZyclonTimer: current: %1" ).arg( configFileInfo.lastModified().toString( "hh:mm:ss" ) ) );
-      lg->info( "config has changed, re-read config file..." );
-      //
-      // TODO: checksumme prüfen
-      //
-      appConfig->loadSettings();
-      if ( isDebugOverride )
-        ( appConfig->getGlobalConfig() ).setLoglevel( LoggingThreshold::LG_DEBUG );
-      //
-      // Konfigobjekt ist als Zeiger im Logger vorhanden,
-      // also reicht ein Neustart des Loggers
-      //
-      lg->shutdown();
-      lg->startLogging();
-      lastModifiedConfig = configFileInfo.lastModified();
-      lg->info( "config has changed, re-read config file...done" );
+      lg->info( "config timestamp has changed, check config file..." );
+      if ( appConfig->isConfigFileChanged() )
+      {
+        //
+        // Die Checksumme hat sich geändert, also neu einlesen
+        //
+        lg->info( "config has changed, re-read config file..." );
+        reReadConfigFromFile();
+        lg->info( "config has changed, re-read config file...done" );
+      }
     }
     lg->debug( "MainDaemon::slotConfigZyclonTimer: check if config changes...OK" );
   }
 
+  /**
+   * @brief MainDaemon::slotAlertFinished
+   * @param theTread
+   */
+  void MainDaemon::slotAlertFinished( RadioAlertThread *theTread )
+  {
+    // der Thread beendet sich...
+    // aus der Liste entfernen!
+    if ( activeThreads.contains( theTread ) )
+    {
+      activeThreads.removeOne( theTread );
+    }
+  }
 }  // namespace radioalert

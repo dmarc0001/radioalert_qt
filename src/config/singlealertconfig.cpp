@@ -8,10 +8,11 @@ namespace radioalert
 
   QByteArray SingleAlertConfig::serialize( void )
   {
-    QString serStr = alertDate.toString( "yyyy-MM-dd" );
     QLatin1String tr( "true" );
     QLatin1String fa( "false" );
     //
+    QString serStr = alertName;
+    serStr += alertDate.toString( "yyyy-MM-dd" );
     serStr += alertTime.toString( "hh_mm" );
     serStr += alertRaiseVol ? tr : fa;
     serStr += QString( "%1" ).arg( alertVolume, 3, 10, QChar( '0' ) );
@@ -164,6 +165,16 @@ namespace radioalert
   void SingleAlertConfig::setAlertIsBusy( bool value )
   {
     alertIsBusy = value;
+  }
+
+  QString SingleAlertConfig::getAlertName() const
+  {
+    return alertName;
+  }
+
+  void SingleAlertConfig::setAlertName( const QString &value )
+  {
+    alertName = value;
   }
 
 }  // namespace radioalert

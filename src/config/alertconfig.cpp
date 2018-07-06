@@ -55,6 +55,11 @@ namespace radioalert
       settings.beginGroup( *sli );
       SingleAlertConfig currAlert;
       //
+      // Name des Alarms
+      //
+      qDebug().noquote().nospace() << "alert name: " << *sli;
+      currAlert.setAlertName( *sli );
+      //
       // Datum, falls vorhanden
       //
       tempStr = settings.value( dateKey, "" ).toString();

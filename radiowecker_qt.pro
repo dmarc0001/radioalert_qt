@@ -4,9 +4,9 @@
 ####                                                                       ####
 ###############################################################################
 
-MAJOR                                  = 1
-MINOR                                  = 0
-PATCH                                  = 0
+MAJOR                                  = 0
+MINOR                                  = 1
+PATCH                                  = 5
 BUILD                                  = 0
 
 win32:VERSION                          = $${MAJOR}.$${MINOR}.$${PATCH}.$${BUILD} # major.minor.patch.build
@@ -73,8 +73,8 @@ SOURCES += \
     src/config/globalconfig.cpp \
     src/config/alertconfig.cpp \
     src/config/appconfigclass.cpp \
-    src/timeservice/checkforalerttimerthread.cpp \
-    src/utils/configfilenotexistexception.cpp
+    src/utils/configfilenotexistexception.cpp \
+    src/radioalertthread.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
@@ -84,9 +84,9 @@ HEADERS += \
     src/config/globalconfig.hpp \
     src/config/alertconfig.hpp \
     src/config/appconfigclass.hpp \
-    src/timeservice/checkforalerttimerthread.hpp \
     src/main.hpp \
-    src/utils/configfilenotexistexception.hpp
+    src/utils/configfilenotexistexception.hpp \
+    src/radioalertthread.hpp
 
 DISTFILES += \
     alert_daemon.ini

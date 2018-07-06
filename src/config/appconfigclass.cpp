@@ -1,5 +1,6 @@
 ﻿#include <QCoreApplication>
 #include <QDebug>
+#include <QFile>
 #include <QSettings>
 
 #include "appconfigclass.hpp"
@@ -21,17 +22,28 @@ namespace radioalert
   {
   }
 
+  /**
+   * @brief AppConfigClass::~AppConfigClass
+   */
   AppConfigClass::~AppConfigClass( void )
   {
     qDebug().noquote() << "...";
     saveSettings();
   }
 
+  /**
+   * @brief AppConfigClass::getLogfileName
+   * @return
+   */
   QString AppConfigClass::getLogfileName( void ) const
   {
     return ( globalConfig.getLogFile() );
   }
 
+  /**
+   * @brief AppConfigClass::setConfigFileName
+   * @param fileName
+   */
   void AppConfigClass::setConfigFileName( const QString &fileName )
   {
     configFileName = fileName;
@@ -63,6 +75,7 @@ namespace radioalert
     alConfig.loadSettings( settings, alerts );
     qDebug() << "alert settings load...OK";
     configHashLoad = makeConfigHash();
+    configFileHash = makeConfigfileHash();
     return ( true );
   }
 
@@ -101,9 +114,14 @@ namespace radioalert
     alConfig.saveSettings( settings, alerts );
     settings.sync();
     configHashLoad = makeConfigHash();
+    configFileHash = makeConfigfileHash();
     return ( retVal );
   }
 
+  /**
+   * @brief AppConfigClass::isConfigChanged
+   * @return
+   */
   bool AppConfigClass::isConfigChanged( void )
   {
     if ( configHashLoad == makeConfigHash() )
@@ -111,27 +129,68 @@ namespace radioalert
     return ( true );
   }
 
+  /**
+   * @brief AppConfigClass::isConfigFileChanged
+   * @return
+   */
+  bool AppConfigClass::isConfigFileChanged( void )
+  {
+    if ( configFileHash == makeConfigfileHash() )
+      return ( false );
+    return ( true );
+  }
+
+  /**
+   * @brief AppConfigClass::makeConfigHash
+   * @return
+   */
   QByteArray AppConfigClass::makeConfigHash( void )
   {
+    // config während Ausführung sperren
+    // QMutexLocker locker( &configLocker );
+
     QByteArray serialized;
     RadioAlertList::Iterator ral;
     //
     qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: clobalConfig...";
     serialized.append( globalConfig.serialize() );
     //
-    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: alerts...";
     for ( ral = alerts.begin(); ral != alerts.end(); ++ral )
     {
-      qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: alerts " << ral.key();
       serialized.append( ral->serialize() );
     }
-    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: calculate hash...";
     QCryptographicHash qhash( QCryptographicHash::Md5 );
     qhash.reset();
     qhash.addData( serialized );
+    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: clobalConfig...OK";
     return ( qhash.result() );
   }
 
+  /**
+   * @brief AppConfigClass::getConfigfileHash
+   * @return
+   */
+  QByteArray AppConfigClass::makeConfigfileHash( void )
+  {
+    // config während ausführung sperren
+    // QMutexLocker locker( &configLocker );
+
+    qDebug().noquote().nospace() << "AppConfigClass::makeConfigfileHash: calculate hash for config file...";
+    QCryptographicHash crypto( QCryptographicHash::Md5 );
+    QFile file( configFileName );
+    file.open( QFile::ReadOnly );
+    while ( !file.atEnd() )
+    {
+      crypto.addData( file.read( 8192 ) );
+    }
+    qDebug().noquote().nospace() << "AppConfigClass::makeConfigfileHash: calculate hash for config file...OK";
+    return ( crypto.result() );
+  }
+
+  /**
+   * @brief AppConfigClass::getGlobalConfig
+   * @return
+   */
   GlobalConfig &AppConfigClass::getGlobalConfig( void )
   {
     // sperren bis abgeschlossen
@@ -139,11 +198,24 @@ namespace radioalert
     return ( globalConfig );
   }
 
+  /**
+   * @brief AppConfigClass::getAlertList
+   * @return
+   */
   RadioAlertList &AppConfigClass::getAlertList( void )
   {
     // sperren bis abgeschlossen
     QMutexLocker locker( &configLocker );
     return ( alerts );
+  }
+
+  /**
+   * @brief AppConfigClass::getLockMutexPtr
+   * @return
+   */
+  QMutex *AppConfigClass::getLockMutexPtr( void )
+  {
+    return ( &configLocker );
   }
 
 }  // namespace radioalert
