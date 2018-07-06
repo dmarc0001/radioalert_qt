@@ -19,7 +19,9 @@ namespace radioalert
     const SingleAlertConfig localAlertConfig;  //! lokale kopie der Konfiguration
     QTimer alertTimer;
     qint32 timerCounter = 20;
+    qint16 threadNumber;
     static qint16 threadCounter;
+    static qint16 threadNumbers;
 
     public:
     explicit RadioAlertThread( std::shared_ptr< Logger > logger, SingleAlertConfig &alert, QObject *parent = nullptr );

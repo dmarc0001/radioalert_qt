@@ -3,4 +3,5 @@ dlib/
 rlib/
 *.qm
 *.autosave
+*.user
 
