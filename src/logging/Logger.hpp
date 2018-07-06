@@ -9,7 +9,7 @@
 #include <QtGlobal>
 #include <memory>
 #include <string>
-#include "../config/AppConfigClass.hpp"
+#include "../config/appconfigclass.hpp"
 #include "loggingthreshold.hpp"
 
 namespace radioalert

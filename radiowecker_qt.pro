@@ -4,9 +4,9 @@
 ####                                                                       ####
 ###############################################################################
 
-MAJOR                                  = 1
-MINOR                                  = 0
-PATCH                                  = 0
+MAJOR                                  = 0
+MINOR                                  = 1
+PATCH                                  = 5
 BUILD                                  = 0
 
 win32:VERSION                          = $${MAJOR}.$${MINOR}.$${PATCH}.$${BUILD} # major.minor.patch.build
@@ -21,6 +21,8 @@ DEFINES                                += VPATCH=$$PATCH
 QT                                     += core
 QT                                     -= gui
 QT                                     += network
+QT                                     += websockets
+QT                                     += xml
 
 CONFIG                                 += stl
 CONFIG                                 += c++11
@@ -35,30 +37,56 @@ INSTALLS                               += target
 CONFIG(release, debug|release) {
   DEFINES                              += QT_NO_DEBUG_OUTPUT
   DESTDIR                              = rout
-  LIBS                                 += -L$$PWD/rlib -llibsoundtouch_qt
+  contains(CONFIG, RASPI) {
+    message( RASPI BUILD )
+    LIBS                               += -L$$PWD/rlib/RASPI -lsoundtouch_qt
+  } else {
+    message( LOCAL BUILD )
+    LIBS                               += -L$$PWD/rlib/X86_64 -lsoundtouch_qt
+  }
   DEFINES                              += QT_NO_DEBUG_OUTPUT
 }
 CONFIG(debug, debug|release) {
   DESTDIR                              = dout
-  LIBS                                 += -L$$PWD/dlib -llibsoundtouch_qt
+  contains(CONFIG, RASPI) {
+    message( RASPI BUILD )
+    LIBS                               += -L$$PWD/dlib/RASPI -lsoundtouch_qt
+  } else {
+    message( LOCAL BUILD )
+    LIBS                               += -L$$PWD/dlib/X86_64 -lsoundtouch_qt
+  }
 }
+
 
 MOC_DIR                                = moc
 RCC_DIR                                = rcc
 UI_DIR                                 = ui
 
-message( radio alert daemon version $$VERSION )
-
+message( radio alert daemon version: $$VERSION )
 
 SOURCES += \
     src/maindaemon.cpp \
     src/main.cpp \
-    src/config/AppConfigClass.cpp \
     src/logging/Logger.cpp \
-    src/logging/loggingthreshold.cpp
+    src/logging/loggingthreshold.cpp \
+    src/config/singlealertconfig.cpp \
+    src/config/globalconfig.cpp \
+    src/config/alertconfig.cpp \
+    src/config/appconfigclass.cpp \
+    src/utils/configfilenotexistexception.cpp \
+    src/radioalertthread.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
-    src/config/AppConfigClass.hpp \
     src/logging/Logger.hpp \
-    src/logging/loggingthreshold.hpp
+    src/logging/loggingthreshold.hpp \
+    src/config/singlealertconfig.hpp \
+    src/config/globalconfig.hpp \
+    src/config/alertconfig.hpp \
+    src/config/appconfigclass.hpp \
+    src/main.hpp \
+    src/utils/configfilenotexistexception.hpp \
+    src/radioalertthread.hpp
+
+DISTFILES += \
+    alert_daemon.ini
