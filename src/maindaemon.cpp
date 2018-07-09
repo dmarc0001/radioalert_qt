@@ -20,6 +20,7 @@ namespace radioalert
       , isDebugOverride( _isOverrideDebug )
       , zyclon( this )
       , configZyclon( this )
+      , availDevicesZyclon( this )
       , appConfig( std::shared_ptr< AppConfigClass >( new AppConfigClass( _configFile ) ) )
   {
     if ( !configFileInfo.exists() )
@@ -40,6 +41,8 @@ namespace radioalert
   {
     lg->shutdown();
     zyclon.stop();
+    configZyclon.stop();
+    availDevicesZyclon.stop();
   }
 
   /**
@@ -51,15 +54,21 @@ namespace radioalert
     LGDEBUG( QString( "override debug: %1" ).arg( isDebugOverride ) );
     LGDEBUG( QString( "config file: %1" ).arg( configFile ) );
     //
+    // initial Geräte einlesen
+    //
+    readAvailDevices();
+    //
     // hier werden alle Callbacks initialisiert und Vorbereitugnen für den Daemon getroffen
     //
     connect( &zyclon, &QTimer::timeout, this, &MainDaemon::slotZyclonTimer );
     connect( &configZyclon, &QTimer::timeout, this, &MainDaemon::slotConfigZyclonTimer );
+    connect( &availDevicesZyclon, &QTimer::timeout, this, &MainDaemon::slotavailDevicesZyclonTimer );
     //
     // Timer intervall hart kodiert in SEKUNDEN
     //
     zyclon.start( mainTimerDelay );
     configZyclon.start( checkConfigTime );
+    availDevicesZyclon.start( availDevices );
   }
 
   /**
@@ -110,6 +119,48 @@ namespace radioalert
     }
     LGINFO( "MainDaemon::requestQuit...OK" );
     emit close();
+  }
+
+  /**
+   * @brief MainDaemon::readAvailDevices
+   * @param fileName
+   * @return
+   */
+  bool MainDaemon::readAvailDevices( void )
+  {
+    AvailableDevices tempDev;
+    try
+    {
+      //
+      // versuche einzulesen
+      //
+      LGDEBUG( "MainDaemon::readAvailDevices" );
+      tempDev.loadSettings( appConfig->getGlobalConfig().getDevicesFile() );
+      //
+      // Objekt kopieren
+      //
+      avStDevices = tempDev.getDevicesList();
+      return ( true );
+    }
+    catch ( ConfigfileNotExistException ex )
+    {
+      //
+      // Fehlermeldung loggen!
+      //
+      LGCRIT( QString( "Cant read devices from file: " ).append( ex.getMessage() ) );
+      return ( false );
+    }
+  }
+
+  /**
+   * @brief MainDaemon::slotavailDevicesZyclonTimer
+   */
+  void MainDaemon::slotavailDevicesZyclonTimer( void )
+  {
+    //
+    // leitet den Aufruf nur weiter....
+    //
+    readAvailDevices();
   }
 
   /**

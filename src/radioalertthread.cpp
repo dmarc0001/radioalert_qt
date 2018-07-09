@@ -11,8 +11,11 @@ namespace radioalert
    * @param alert
    * @param parent
    */
-  RadioAlertThread::RadioAlertThread( std::shared_ptr< Logger > logger, SingleAlertConfig &alert, QObject *parent )
-      : QThread( parent ), lg( logger ), localAlertConfig( alert ), alertTimer( this )
+  RadioAlertThread::RadioAlertThread( std::shared_ptr< Logger > logger,
+                                      SingleAlertConfig &alert,
+                                      StDevicesHashList &devices,
+                                      QObject *parent )
+      : QThread( parent ), lg( logger ), localAlertConfig( alert ), avStDevices( devices ), alertTimer( this )
   {
     alertTimer.setInterval( 1000 );
     threadCounter++;
@@ -39,6 +42,14 @@ namespace radioalert
                 .arg( localAlertConfig.getAlertName() )
                 .arg( localAlertConfig.getAlertDate().toString( "hh:mm" ) ) );
     connect( &alertTimer, &QTimer::timeout, this, &RadioAlertThread::slotOnTimer );
+    //
+    // Voraussetzungen prüfen
+    //
+
+    //
+    // Geräte verbinden
+    //
+
     exec();
     LGINFO( QString( "radio alert %1 finished." ).arg( localAlertConfig.getAlertName() ) );
     emit sigAlertFinished( this );
