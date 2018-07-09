@@ -6,7 +6,7 @@
 
 MAJOR                                  = 0
 MINOR                                  = 1
-PATCH                                  = 5
+PATCH                                  = 7
 BUILD                                  = 0
 
 win32:VERSION                          = $${MAJOR}.$${MINOR}.$${PATCH}.$${BUILD} # major.minor.patch.build
@@ -70,23 +70,27 @@ SOURCES += \
     src/logging/Logger.cpp \
     src/logging/loggingthreshold.cpp \
     src/config/singlealertconfig.cpp \
-    src/config/globalconfig.cpp \
     src/config/alertconfig.cpp \
     src/config/appconfigclass.cpp \
     src/utils/configfilenotexistexception.cpp \
-    src/radioalertthread.cpp
+    src/radioalertthread.cpp \
+    src/config/config_all.cpp \
+    src/config/availabledevices.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
     src/logging/Logger.hpp \
     src/logging/loggingthreshold.hpp \
     src/config/singlealertconfig.hpp \
-    src/config/globalconfig.hpp \
     src/config/alertconfig.hpp \
     src/config/appconfigclass.hpp \
     src/main.hpp \
     src/utils/configfilenotexistexception.hpp \
-    src/radioalertthread.hpp
+    src/radioalertthread.hpp \
+    src/global_config.hpp \
+    src/config/config_all.hpp \
+    src/config/availabledevices.hpp
 
 DISTFILES += \
-    alert_daemon.ini
+    alert_daemon.ini \
+    available_devices.ini

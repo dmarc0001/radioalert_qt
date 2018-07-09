@@ -16,15 +16,16 @@ namespace radioalert
   MainDaemon::MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent )
       : QObject( parent )
       , configFile( _configFile )
-      , configFileInfo( configFile )
+      , configFileInfo( _configFile )
       , isDebugOverride( _isOverrideDebug )
       , zyclon( this )
       , configZyclon( this )
+      , availDevicesZyclon( this )
       , appConfig( std::shared_ptr< AppConfigClass >( new AppConfigClass( _configFile ) ) )
   {
     if ( !configFileInfo.exists() )
     {
-      throw ConfigfileNotExistException();
+      throw ConfigfileNotExistException( QString( "configfile %1 not exist" ).arg( configFile ) );
     }
     // kein Caching, sonst merkt er nicht wenn es veränderungen gibt
     configFileInfo.setCaching( false );
@@ -40,6 +41,34 @@ namespace radioalert
   {
     lg->shutdown();
     zyclon.stop();
+    configZyclon.stop();
+    availDevicesZyclon.stop();
+  }
+
+  /**
+   * @brief MainDaemon::init
+   */
+  void MainDaemon::init( void )
+  {
+    LGINFO( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
+    LGDEBUG( QString( "override debug: %1" ).arg( isDebugOverride ) );
+    LGDEBUG( QString( "config file: %1" ).arg( configFile ) );
+    //
+    // initial Geräte einlesen
+    //
+    readAvailDevices();
+    //
+    // hier werden alle Callbacks initialisiert und Vorbereitugnen für den Daemon getroffen
+    //
+    connect( &zyclon, &QTimer::timeout, this, &MainDaemon::slotZyclonTimer );
+    connect( &configZyclon, &QTimer::timeout, this, &MainDaemon::slotConfigZyclonTimer );
+    connect( &availDevicesZyclon, &QTimer::timeout, this, &MainDaemon::slotavailDevicesZyclonTimer );
+    //
+    // Timer intervall hart kodiert in SEKUNDEN
+    //
+    zyclon.start( mainTimerDelay );
+    configZyclon.start( checkConfigTime );
+    availDevicesZyclon.start( availDevices );
   }
 
   /**
@@ -47,13 +76,13 @@ namespace radioalert
    */
   void MainDaemon::reReadConfigFromFile( void )
   {
-    lg->debug( "MainDaemon::reReadConfigFromFile..." );
+    LGDEBUG( "MainDaemon::reReadConfigFromFile..." );
     //
     // Konfiguration neu laden
     //
     if ( !configFileInfo.exists() )
     {
-      throw ConfigfileNotExistException();
+      throw ConfigfileNotExistException( QString( "configfile %1 not exist" ).arg( configFile ) );
     }
     appConfig->loadSettings();
     lastModifiedConfig = configFileInfo.lastModified();
@@ -68,23 +97,70 @@ namespace radioalert
   }
 
   /**
-   * @brief MainDaemon::init
+   * @brief MainDaemon::requestQuit
    */
-  void MainDaemon::init( void )
+  void MainDaemon::requestQuit( void )
   {
-    lg->info( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
-    lg->debug( QString( "override debug: %1" ).arg( isDebugOverride ) );
-    lg->debug( QString( "config file: %1" ).arg( configFile ) );
+    LGINFO( "MainDaemon::requestQuit..." );
     //
-    // hier werden alle Callbacks initialisiert und Vorbereitugnen für den Daemon getroffen
+    // Alle eventuell vorhandenen Thread abschiessen
     //
-    connect( &zyclon, &QTimer::timeout, this, &MainDaemon::slotZyclonTimer );
-    connect( &configZyclon, &QTimer::timeout, this, &MainDaemon::slotConfigZyclonTimer );
+    QVector< RadioAlertThread * >::Iterator alt;
+    for ( alt = activeThreads.begin(); alt != activeThreads.end(); alt++ )
+    {
+      LGINFO( "MainDaemon::requestQuit: kill thread..." );
+      // signalisiere sein baldiges Ende
+      ( *alt )->cancelThread();
+      // ware max 3.5 Sekunden
+      ( *alt )->wait( 3500 );
+      // wenn er noch läuft TEMRINIEREN
+      if ( ( *alt )->isRunning() )
+        ( *alt )->terminate();
+    }
+    LGINFO( "MainDaemon::requestQuit...OK" );
+    emit close();
+  }
+
+  /**
+   * @brief MainDaemon::readAvailDevices
+   * @param fileName
+   * @return
+   */
+  bool MainDaemon::readAvailDevices( void )
+  {
+    AvailableDevices tempDev;
+    try
+    {
+      //
+      // versuche einzulesen
+      //
+      LGDEBUG( "MainDaemon::readAvailDevices" );
+      tempDev.loadSettings( appConfig->getGlobalConfig().getDevicesFile() );
+      //
+      // Objekt kopieren
+      //
+      avStDevices = tempDev.getDevicesList();
+      return ( true );
+    }
+    catch ( ConfigfileNotExistException ex )
+    {
+      //
+      // Fehlermeldung loggen!
+      //
+      LGCRIT( QString( "Cant read devices from file: " ).append( ex.getMessage() ) );
+      return ( false );
+    }
+  }
+
+  /**
+   * @brief MainDaemon::slotavailDevicesZyclonTimer
+   */
+  void MainDaemon::slotavailDevicesZyclonTimer( void )
+  {
     //
-    // Timer intervall hart kodiert in SEKUNDEN
+    // leitet den Aufruf nur weiter....
     //
-    zyclon.start( mainTimerDelay );
-    configZyclon.start( checkConfigTime );
+    readAvailDevices();
   }
 
   /**
@@ -95,18 +171,19 @@ namespace radioalert
     static qint32 loopcounter = 0;
     qint16 timeDiff = 0;
     //
-    lg->debug( QString( "zycon loop...<%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
+    LGDEBUG( QString( "MainDaemon::slotZyclonTimer: <%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
     //
     // lies die Timer und stelle fest ob ein Alarm fällig ist
-    // kopie der Liste machen
+    // Referenz auf die Liste holen
     //
-    RadioAlertList alertList = appConfig->getAlertList();
+    RadioAlertList &alertList = appConfig->getAlertList();
     //
     // Konfiguration sperren bis der Test durch ist
     //
     QMutexLocker locker( appConfig->getLockMutexPtr() );
     //
     // jetzt feststellen, ob ein Alarm bevorsteht
+    // iteriere über die values...
     //
     RadioAlertList::Iterator ali;
     for ( ali = alertList.begin(); ali != alertList.end(); ++ali )
@@ -152,7 +229,7 @@ namespace radioalert
         //
         // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
         //
-        lg->info( "MainDaemon::slotZyclonTimer: start alert thread" );
+        LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
         ali->setAlertIsBusy( true );
         RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, this );
         // in die Liste der Threads
@@ -169,10 +246,10 @@ namespace radioalert
       {
         // ist der Alarm ausserhalb des Fensters, lösche wenigstens den Marker
         // für "in Arbeit"
+        // LGDEBUG( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
         ali->setAlertIsBusy( false );
       }
     }
-    // emit close();
   }
 
   /**
@@ -218,20 +295,20 @@ namespace radioalert
    */
   void MainDaemon::slotConfigZyclonTimer( void )
   {
-    lg->debug( "MainDaemon::slotConfigZyclonTimer: check if config changes..." );
+    LGDEBUG( "MainDaemon::slotConfigZyclonTimer: check if config changes..." );
     //
     // Konfiguration neu laden
     //
     if ( !configFileInfo.exists() )
     {
-      throw ConfigfileNotExistException();
+      throw ConfigfileNotExistException( QString( "configfile %1 not exist" ).arg( configFile ) );
     }
     //
     // Änderung nach dem letzten Einlesen in der Konfiguration?
     //
     if ( appConfig->isConfigChanged() )
     {
-      lg->info( "configuration was changed, write to file..." );
+      LGINFO( "configuration was changed, write to file..." );
       appConfig->saveSettings();
       lastModifiedConfig = configFileInfo.lastModified();
       return;
@@ -240,20 +317,20 @@ namespace radioalert
     QDateTime currentModificationTime = configFileInfo.lastModified();
     if ( currentModificationTime != lastModifiedConfig )
     {
-      lg->debug(
+      LGDEBUG(
           QString( "MainDaemon::slotConfigZyclonTimer: current: %1" ).arg( configFileInfo.lastModified().toString( "hh:mm:ss" ) ) );
-      lg->info( "config timestamp has changed, check config file..." );
+      LGINFO( "config timestamp has changed, check config file..." );
       if ( appConfig->isConfigFileChanged() )
       {
         //
         // Die Checksumme hat sich geändert, also neu einlesen
         //
-        lg->info( "config has changed, re-read config file..." );
+        LGINFO( "config has changed, re-read config file..." );
         reReadConfigFromFile();
-        lg->info( "config has changed, re-read config file...done" );
+        LGINFO( "config has changed, re-read config file...done" );
       }
     }
-    lg->debug( "MainDaemon::slotConfigZyclonTimer: check if config changes...OK" );
+    LGDEBUG( "MainDaemon::slotConfigZyclonTimer: check if config changes...OK" );
   }
 
   /**

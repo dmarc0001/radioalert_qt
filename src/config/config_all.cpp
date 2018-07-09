@@ -1,4 +1,4 @@
-#include "globalconfig.hpp"
+#include "config_all.hpp"
 #include <QCoreApplication>
 #include <QtDebug>
 
@@ -16,8 +16,6 @@ namespace radioalert
   const QString GlobalConfig::guiExtraBottom1Key( "gui_extra_bottom1" );
   const QString GlobalConfig::guiExtraBottom2Key( "gui_extra_bottom2" );
   const QString GlobalConfig::loglevelKey( "loglevel" );
-  const QString GlobalConfig::path1Key( "path1" );
-  const QString GlobalConfig::path2Key( "path2" );
   const QString GlobalConfig::guiHeaderKey( "gui_header" );
   const QString GlobalConfig::devicesFileKey( "devices_file" );
   const QString GlobalConfig::guiThemeKey( "gui_theme" );
@@ -104,13 +102,6 @@ namespace radioalert
     guiExtraBottom2 = settings.value( guiExtraBottom2Key, "for Soundtouch devices" ).toString();
     qDebug().noquote().nospace() << "gui extra bottom line 2: <" << guiExtraBottom2 << ">";
     //
-    // path 1 und 2
-    //
-    path1 = settings.value( path1Key, "./" ).toString();
-    qDebug().noquote().nospace() << "path 1: <" << path1 << ">";
-    path2 = settings.value( path2Key, "./" ).toString();
-    qDebug().noquote().nospace() << "path 2: <" << path2 << ">";
-    //
     // Gui devices file (discovered devices)
     //
     devicesFile = settings.value( devicesFileKey, "." ).toString();
@@ -139,15 +130,13 @@ namespace radioalert
     settings.setValue( logToConsoleKey, logToConsole );
     settings.setValue( serverPortKey, serverPort );
     settings.setValue( serverAddrKey, serverAddr.toString() );
-    settings.setValue( timeZoneKey, timeZone.id() );
+    settings.setValue( timeZoneKey, QString( timeZone.id() ) );
     settings.setValue( raiseVolKey, raiseVol );
     settings.setValue( networkTimeoutKey, networkTimeout );
     settings.setValue( autorefreshKey, autorefresh );
     settings.setValue( guiExtraBottom1Key, guiExtraBottom1 );
     settings.setValue( guiExtraBottom2Key, guiExtraBottom2 );
     settings.setValue( loglevelKey, LoggingUtils::thresholdNames.key( loglevel ) );
-    settings.setValue( path1Key, path1 );
-    settings.setValue( path2Key, path2 );
     settings.setValue( guiHeaderKey, guiHeader );
     settings.setValue( devicesFileKey, devicesFile );
     settings.setValue( guiThemeKey, guiTheme );
@@ -174,8 +163,6 @@ namespace radioalert
     settings.remove( guiExtraBottom1Key );
     settings.remove( guiExtraBottom2Key );
     settings.remove( loglevelKey );
-    settings.remove( path1Key );
-    settings.remove( path2Key );
     settings.remove( guiHeaderKey );
     settings.remove( devicesFileKey );
     settings.remove( guiThemeKey );

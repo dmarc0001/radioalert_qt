@@ -5,7 +5,9 @@
 #include <QObject>
 #include <QThread>
 #include <QTimer>
+#include "config/availabledevices.hpp"
 #include "config/singlealertconfig.hpp"
+#include "global_config.hpp"
 #include "logging/Logger.hpp"
 
 namespace radioalert
@@ -17,6 +19,7 @@ namespace radioalert
     private:
     std::shared_ptr< Logger > lg;
     const SingleAlertConfig localAlertConfig;  //! lokale kopie der Konfiguration
+    const StDevicesHashList avStDevices;       //! lokale kopie der verfügbaren Geräte
     QTimer alertTimer;
     qint32 timerCounter = 20;
     qint16 threadNumber;
@@ -24,7 +27,10 @@ namespace radioalert
     static qint16 threadNumbers;
 
     public:
-    explicit RadioAlertThread( std::shared_ptr< Logger > logger, SingleAlertConfig &alert, QObject *parent = nullptr );
+    explicit RadioAlertThread( std::shared_ptr< Logger > logger,
+                               SingleAlertConfig &alert,
+                               StDevicesHashList &devices,
+                               QObject *parent = nullptr );
     ~RadioAlertThread() override;
     void run( void ) override;
     void startTimer( int interval );

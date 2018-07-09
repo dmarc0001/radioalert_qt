@@ -2,6 +2,10 @@
 
 namespace radioalert
 {
+  ConfigfileNotExistException::ConfigfileNotExistException( QString const &message ) : message( message )
+  {
+  }
+
   void ConfigfileNotExistException::raise() const
   {
     throw *this;
@@ -11,4 +15,10 @@ namespace radioalert
   {
     return new ConfigfileNotExistException( *this );
   }
+
+  QString ConfigfileNotExistException::getMessage( void ) const
+  {
+    return ( message );
+  }
+
 }  // namespace radioalert

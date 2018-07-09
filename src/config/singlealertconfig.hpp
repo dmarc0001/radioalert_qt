@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTime>
+#include "../global_config.hpp"
 
 namespace radioalert
 {
