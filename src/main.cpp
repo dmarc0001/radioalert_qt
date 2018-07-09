@@ -38,12 +38,14 @@ int main( int argc, char *argv[] )
   // Zeiger auf die Reload Funktion zuweisen, damit der Signalhandler
   // dann auch reagieren kann
   //
-  mSignalHahdler = std::bind( &radioalert::MainDaemon::reReadConfigFromFile, &daemon );
+  mHupSignalHahdler = std::bind( &radioalert::MainDaemon::reReadConfigFromFile, &daemon );
+  mIntSignalHahdler = std::bind( &radioalert::MainDaemon::requestQuit, &daemon );
   daemon.init();
   //
   // Signalhandler installieren
   //
   std::signal( SIGHUP, signalHandler );
+  std::signal( SIGINT, signalHandler );
   //
   // Schliessen der App an QCoreApplication mitteilen
   //
@@ -60,17 +62,27 @@ void signalHandler( int signal )
   //
   // nur bei dem gewünschten Signal
   //
+  if ( signal == SIGINT )
+  {
+    if ( mIntSignalHahdler != nullptr )
+    {
+      //
+      // Funktionsobjekt, zeigt auf die Instanz/memberfunktion
+      //
+      mIntSignalHahdler();
+    }
+  }
   if ( signal == SIGHUP )
   {
     //
     // Sicherheitsabfrage, sonst würde das mit SIFGAULT enden...
     //
-    if ( mSignalHahdler != nullptr )
+    if ( mHupSignalHahdler != nullptr )
     {
       //
       // Funktionsobjekt, zeigt auf die Instanz/memberfunktion
       //
-      mSignalHahdler();
+      mHupSignalHahdler();
     }
   }
 }

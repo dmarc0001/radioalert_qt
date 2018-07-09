@@ -43,6 +43,26 @@ namespace radioalert
   }
 
   /**
+   * @brief MainDaemon::init
+   */
+  void MainDaemon::init( void )
+  {
+    lg->info( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
+    lg->debug( QString( "override debug: %1" ).arg( isDebugOverride ) );
+    lg->debug( QString( "config file: %1" ).arg( configFile ) );
+    //
+    // hier werden alle Callbacks initialisiert und Vorbereitugnen für den Daemon getroffen
+    //
+    connect( &zyclon, &QTimer::timeout, this, &MainDaemon::slotZyclonTimer );
+    connect( &configZyclon, &QTimer::timeout, this, &MainDaemon::slotConfigZyclonTimer );
+    //
+    // Timer intervall hart kodiert in SEKUNDEN
+    //
+    zyclon.start( mainTimerDelay );
+    configZyclon.start( checkConfigTime );
+  }
+
+  /**
    * @brief MainDaemon::reReadConfigFromFile
    */
   void MainDaemon::reReadConfigFromFile( void )
@@ -68,23 +88,28 @@ namespace radioalert
   }
 
   /**
-   * @brief MainDaemon::init
+   * @brief MainDaemon::requestQuit
    */
-  void MainDaemon::init( void )
+  void MainDaemon::requestQuit( void )
   {
-    lg->info( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
-    lg->debug( QString( "override debug: %1" ).arg( isDebugOverride ) );
-    lg->debug( QString( "config file: %1" ).arg( configFile ) );
+    lg->info( "MainDaemon::requestQuit..." );
     //
-    // hier werden alle Callbacks initialisiert und Vorbereitugnen für den Daemon getroffen
+    // Alle eventuell vorhandenen Thread abschiessen
     //
-    connect( &zyclon, &QTimer::timeout, this, &MainDaemon::slotZyclonTimer );
-    connect( &configZyclon, &QTimer::timeout, this, &MainDaemon::slotConfigZyclonTimer );
-    //
-    // Timer intervall hart kodiert in SEKUNDEN
-    //
-    zyclon.start( mainTimerDelay );
-    configZyclon.start( checkConfigTime );
+    QVector< RadioAlertThread * >::Iterator alt;
+    for ( alt = activeThreads.begin(); alt != activeThreads.end(); alt++ )
+    {
+      lg->info( "MainDaemon::requestQuit: kill thread..." );
+      // signalisiere sein baldiges Ende
+      ( *alt )->cancelThread();
+      // ware max 3.5 Sekunden
+      ( *alt )->wait( 3500 );
+      // wenn er noch läuft TEMRINIEREN
+      if ( ( *alt )->isRunning() )
+        ( *alt )->terminate();
+    }
+    lg->info( "MainDaemon::requestQuit...OK" );
+    emit close();
   }
 
   /**
@@ -98,15 +123,16 @@ namespace radioalert
     lg->debug( QString( "zycon loop...<%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
     //
     // lies die Timer und stelle fest ob ein Alarm fällig ist
-    // kopie der Liste machen
+    // Referenz auf die Liste holen
     //
-    RadioAlertList alertList = appConfig->getAlertList();
+    RadioAlertList &alertList = appConfig->getAlertList();
     //
     // Konfiguration sperren bis der Test durch ist
     //
     QMutexLocker locker( appConfig->getLockMutexPtr() );
     //
     // jetzt feststellen, ob ein Alarm bevorsteht
+    // iteriere über die values...
     //
     RadioAlertList::Iterator ali;
     for ( ali = alertList.begin(); ali != alertList.end(); ++ali )
@@ -169,10 +195,10 @@ namespace radioalert
       {
         // ist der Alarm ausserhalb des Fensters, lösche wenigstens den Marker
         // für "in Arbeit"
+        // lg->debug( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
         ali->setAlertIsBusy( false );
       }
     }
-    // emit close();
   }
 
   /**

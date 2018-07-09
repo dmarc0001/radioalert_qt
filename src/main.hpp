@@ -6,7 +6,8 @@
 #include "maindaemon.hpp"
 
 //! Funktionszeiger auf Funktion void f(void)
-static std::function< void() > mSignalHahdler;
+static std::function< void() > mHupSignalHahdler;
+static std::function< void() > mIntSignalHahdler;
 
 //! Naja, main halt
 int main( int argc, char *argv[] );

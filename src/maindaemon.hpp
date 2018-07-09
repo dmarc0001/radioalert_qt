@@ -47,9 +47,10 @@ namespace radioalert
 
     public:
     explicit MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent = nullptr );
-    ~MainDaemon() override;
-    void init( void );
-    void reReadConfigFromFile( void );
+    ~MainDaemon() override;             //! Destruktor
+    void init( void );                  //! initialisiere das Programm
+    void reReadConfigFromFile( void );  //! Lese config von Konfigurationsdatei
+    void requestQuit( void );           //! Fordere Ende an
 
     private:
     bool isAlertDateToday( QDate aData );
