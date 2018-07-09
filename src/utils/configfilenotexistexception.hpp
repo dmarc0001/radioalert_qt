@@ -8,7 +8,13 @@ namespace radioalert
 {
   class ConfigfileNotExistException : public QException
   {
+    private:
+    QString message;
+
     public:
+    ConfigfileNotExistException( QString const &message );
+    virtual ~ConfigfileNotExistException(){};
+    QString getMessage( void ) const;
     ConfigfileNotExistException *clone() const;
     void raise() const;
   };

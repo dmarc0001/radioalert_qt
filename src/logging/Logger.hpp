@@ -28,14 +28,14 @@ namespace radioalert
     static const QString dateTimeFormat;                  //! Format der Zeitausgabe
     bool isFileOpen;                                      //! true, wenn logdatei beschrieben werden kann
     bool logToConsole;                                    //! loggen zur Konsole?
+    bool loggerIsDebug;                                   //! ist der Logger im DEBUG Mode?
 
     public:
     Logger( const std::shared_ptr< AppConfigClass > _config );  //! Konstruktor mit Zeiger auf das Konfig-Objekt
     virtual ~Logger();                                          //! Destruktor
     int startLogging( LoggingThreshold th );                    //! Loggen beginnen
     int startLogging( void );                                   //! loggen beginnen mit festgelegter einstellung
-    // void setThreshold( LoggingThreshold th );                   //! Setzte Loggingstufe
-    // LoggingThreshold getThreshold( void );                      //! lese Loggingstufe
+    bool isDebug( void );                                       //! debuggingMode?
     //
     void info( const QString &msg );      //! INFO Ausgaben
     void info( const std::string &msg );  //! INFO Ausgaben

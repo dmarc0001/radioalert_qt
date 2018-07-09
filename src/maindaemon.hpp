@@ -15,6 +15,7 @@
 #include <QVector>
 #include <memory>
 #include "config/appconfigclass.hpp"
+#include "global_config.hpp"
 #include "logging/Logger.hpp"
 #include "radioalertthread.hpp"
 #include "utils/configfilenotexistexception.hpp"

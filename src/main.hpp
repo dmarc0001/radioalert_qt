@@ -3,6 +3,7 @@
 
 #include <qglobal.h>
 #include <csignal>
+#include "global_config.hpp"
 #include "maindaemon.hpp"
 
 //! Funktionszeiger auf Funktion void f(void)

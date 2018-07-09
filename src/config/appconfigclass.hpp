@@ -8,9 +8,10 @@
 #include <QSettings>
 #include <QString>
 #include <QVector>
+#include "../global_config.hpp"
 #include "../logging/loggingthreshold.hpp"
 #include "alertconfig.hpp"
-#include "globalconfig.hpp"
+#include "config_all.hpp"
 #include "singlealertconfig.hpp"
 
 namespace radioalert

@@ -7,6 +7,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QString>
+#include "../global_config.hpp"
 #include "singlealertconfig.hpp"
 
 namespace radioalert

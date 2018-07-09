@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QTimer>
 #include "config/singlealertconfig.hpp"
+#include "global_config.hpp"
 #include "logging/Logger.hpp"
 
 namespace radioalert

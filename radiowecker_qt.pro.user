@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.6.2, 2018-07-06T14:05:15. -->
+<!-- Written by QtCreator 4.6.2, 2018-07-09T14:58:57. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -187,7 +187,7 @@
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
-      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">-f %{CurrentProject:Path}/alert_daemon.ini %{CurrentRun:Executable:Path}/alert_daemon.ini</value>
+      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">-f %{CurrentProject:Path}/*.ini %{CurrentRun:Executable:Path}/</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.Command">cp</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.WorkingDirectory">%{CurrentProject:Path}</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Benutzerdefinierter Verarbeitungsschritt</value>
@@ -436,7 +436,7 @@
        <value type="QString">/home/dmarcini/raspi/sysroot</value>
       </valuelist>
       <valuelist type="QVariantList" key="ProjectExplorer.RunConfiguration.LastDeployedTimes">
-       <value type="QDateTime">2018-07-04T15:07:39</value>
+       <value type="QDateTime">2018-07-09T12:36:17</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.Incremental">true</value>
@@ -493,12 +493,12 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">alert_daemon (auf anderem Gerät)</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:alert_daemon</value>
-    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments"></value>
+    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments">-d --config /home/pi/qt5pi/alert_daemon/alert_daemon.ini</value>
     <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.TargetName">alert_daemon</value>
     <value type="int" key="RemoteLinux.EnvironmentAspect.Version">1</value>
     <value type="QString" key="RemoteLinux.RunConfig.AlternateRemoteExecutable"></value>
     <value type="bool" key="RemoteLinux.RunConfig.UseAlternateRemoteExecutable">false</value>
-    <value type="QString" key="RemoteLinux.RunConfig.WorkingDirectory"></value>
+    <value type="QString" key="RemoteLinux.RunConfig.WorkingDirectory">/home/pi/qt5pi/alert_daemon</value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>

@@ -16,7 +16,7 @@ namespace radioalert
   MainDaemon::MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent )
       : QObject( parent )
       , configFile( _configFile )
-      , configFileInfo( configFile )
+      , configFileInfo( _configFile )
       , isDebugOverride( _isOverrideDebug )
       , zyclon( this )
       , configZyclon( this )
@@ -24,7 +24,7 @@ namespace radioalert
   {
     if ( !configFileInfo.exists() )
     {
-      throw ConfigfileNotExistException();
+      throw ConfigfileNotExistException( QString( "configfile %1 not exist" ).arg( configFile ) );
     }
     // kein Caching, sonst merkt er nicht wenn es veränderungen gibt
     configFileInfo.setCaching( false );
@@ -47,9 +47,9 @@ namespace radioalert
    */
   void MainDaemon::init( void )
   {
-    lg->info( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
-    lg->debug( QString( "override debug: %1" ).arg( isDebugOverride ) );
-    lg->debug( QString( "config file: %1" ).arg( configFile ) );
+    LGINFO( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
+    LGDEBUG( QString( "override debug: %1" ).arg( isDebugOverride ) );
+    LGDEBUG( QString( "config file: %1" ).arg( configFile ) );
     //
     // hier werden alle Callbacks initialisiert und Vorbereitugnen für den Daemon getroffen
     //
@@ -67,13 +67,13 @@ namespace radioalert
    */
   void MainDaemon::reReadConfigFromFile( void )
   {
-    lg->debug( "MainDaemon::reReadConfigFromFile..." );
+    LGDEBUG( "MainDaemon::reReadConfigFromFile..." );
     //
     // Konfiguration neu laden
     //
     if ( !configFileInfo.exists() )
     {
-      throw ConfigfileNotExistException();
+      throw ConfigfileNotExistException( QString( "configfile %1 not exist" ).arg( configFile ) );
     }
     appConfig->loadSettings();
     lastModifiedConfig = configFileInfo.lastModified();
@@ -92,14 +92,14 @@ namespace radioalert
    */
   void MainDaemon::requestQuit( void )
   {
-    lg->info( "MainDaemon::requestQuit..." );
+    LGINFO( "MainDaemon::requestQuit..." );
     //
     // Alle eventuell vorhandenen Thread abschiessen
     //
     QVector< RadioAlertThread * >::Iterator alt;
     for ( alt = activeThreads.begin(); alt != activeThreads.end(); alt++ )
     {
-      lg->info( "MainDaemon::requestQuit: kill thread..." );
+      LGINFO( "MainDaemon::requestQuit: kill thread..." );
       // signalisiere sein baldiges Ende
       ( *alt )->cancelThread();
       // ware max 3.5 Sekunden
@@ -108,7 +108,7 @@ namespace radioalert
       if ( ( *alt )->isRunning() )
         ( *alt )->terminate();
     }
-    lg->info( "MainDaemon::requestQuit...OK" );
+    LGINFO( "MainDaemon::requestQuit...OK" );
     emit close();
   }
 
@@ -120,7 +120,7 @@ namespace radioalert
     static qint32 loopcounter = 0;
     qint16 timeDiff = 0;
     //
-    lg->debug( QString( "zycon loop...<%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
+    LGDEBUG( QString( "MainDaemon::slotZyclonTimer: <%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
     //
     // lies die Timer und stelle fest ob ein Alarm fällig ist
     // Referenz auf die Liste holen
@@ -178,7 +178,7 @@ namespace radioalert
         //
         // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
         //
-        lg->info( "MainDaemon::slotZyclonTimer: start alert thread" );
+        LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
         ali->setAlertIsBusy( true );
         RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, this );
         // in die Liste der Threads
@@ -195,7 +195,7 @@ namespace radioalert
       {
         // ist der Alarm ausserhalb des Fensters, lösche wenigstens den Marker
         // für "in Arbeit"
-        // lg->debug( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
+        // LGDEBUG( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
         ali->setAlertIsBusy( false );
       }
     }
@@ -244,20 +244,20 @@ namespace radioalert
    */
   void MainDaemon::slotConfigZyclonTimer( void )
   {
-    lg->debug( "MainDaemon::slotConfigZyclonTimer: check if config changes..." );
+    LGDEBUG( "MainDaemon::slotConfigZyclonTimer: check if config changes..." );
     //
     // Konfiguration neu laden
     //
     if ( !configFileInfo.exists() )
     {
-      throw ConfigfileNotExistException();
+      throw ConfigfileNotExistException( QString( "configfile %1 not exist" ).arg( configFile ) );
     }
     //
     // Änderung nach dem letzten Einlesen in der Konfiguration?
     //
     if ( appConfig->isConfigChanged() )
     {
-      lg->info( "configuration was changed, write to file..." );
+      LGINFO( "configuration was changed, write to file..." );
       appConfig->saveSettings();
       lastModifiedConfig = configFileInfo.lastModified();
       return;
@@ -266,20 +266,20 @@ namespace radioalert
     QDateTime currentModificationTime = configFileInfo.lastModified();
     if ( currentModificationTime != lastModifiedConfig )
     {
-      lg->debug(
+      LGDEBUG(
           QString( "MainDaemon::slotConfigZyclonTimer: current: %1" ).arg( configFileInfo.lastModified().toString( "hh:mm:ss" ) ) );
-      lg->info( "config timestamp has changed, check config file..." );
+      LGINFO( "config timestamp has changed, check config file..." );
       if ( appConfig->isConfigFileChanged() )
       {
         //
         // Die Checksumme hat sich geändert, also neu einlesen
         //
-        lg->info( "config has changed, re-read config file..." );
+        LGINFO( "config has changed, re-read config file..." );
         reReadConfigFromFile();
-        lg->info( "config has changed, re-read config file...done" );
+        LGINFO( "config has changed, re-read config file...done" );
       }
     }
-    lg->debug( "MainDaemon::slotConfigZyclonTimer: check if config changes...OK" );
+    LGDEBUG( "MainDaemon::slotConfigZyclonTimer: check if config changes...OK" );
   }
 
   /**

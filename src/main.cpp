@@ -14,10 +14,9 @@ int main( int argc, char *argv[] )
 {
   QCoreApplication a( argc, argv );
   QCommandLineParser parser;
-  QString appName = QCoreApplication::applicationName().append( ( ".ini" ) );
+  QString appName = QString( "%1.ini" ).arg( QCoreApplication::applicationName() );
   QString configName;
 
-  parser.setApplicationDescription( "radioalert qt" );
   parser.addHelpOption();
   //
   // debug an oder aus

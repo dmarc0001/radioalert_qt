@@ -6,6 +6,7 @@
 namespace radioalert
 {
   const QString Logger::dateTimeFormat = "[yyyy-MM-dd hh:mm:ss.z] ";
+
   /**
    * @brief Logger::Logger Konstruktor mit Konfigurationsdatei Übergabe
    * @param lFile
@@ -17,24 +18,34 @@ namespace radioalert
       , configClass( _config )
       , isFileOpen( false )
       , logToConsole( true )
+      , loggerIsDebug( false )
   {
     //
     // einen eigenen Handler für debug ausgaben einbinden
     //
     // qInstallMessageHandler( &Logger::messageOutput );
+    if ( threshold == LoggingThreshold::LG_DEBUG )
+      loggerIsDebug = true;
   }
 
-  Logger::Logger() : threshold( LoggingThreshold::LG_WARNING ), configClass( nullptr ), isFileOpen( false )
+  Logger::Logger() : threshold( LoggingThreshold::LG_WARNING ), configClass( nullptr ), isFileOpen( false ), loggerIsDebug( false )
   {
     //
     // einen eigenen Handler für debug ausgaben einbinden
     //
     // qInstallMessageHandler( &Logger::messageOutput );
+    if ( threshold == LoggingThreshold::LG_DEBUG )
+      loggerIsDebug = true;
   }
 
   Logger::~Logger()
   {
     shutdown();
+  }
+
+  bool Logger::isDebug( void )
+  {
+    return ( loggerIsDebug );
   }
 
   /**
@@ -44,6 +55,8 @@ namespace radioalert
   int Logger::startLogging( LoggingThreshold th )
   {
     threshold = th;
+    if ( threshold == LoggingThreshold::LG_DEBUG )
+      loggerIsDebug = true;
     return ( startLogging() );
   }
 
@@ -82,28 +95,6 @@ namespace radioalert
   }
 
   /**
-   * @brief Logger::setThreshold
-   * @param th
-   */
-  /*
-  void Logger::setThreshold( LoggingThreshold th )
-  {
-    threshold = th;
-  }
-  */
-
-  /**
-   * @brief Logger::getThreshold
-   * @return
-   */
-  /*
-  LoggingThreshold Logger::getThreshold( void )
-  {
-    return ( threshold );
-  }
-  */
-
-  /**
    * @brief Logger::warn Ausgabe(n) für WARNUNG
    * @param msg
    */
@@ -113,7 +104,8 @@ namespace radioalert
       qWarning().noquote().nospace() << msg;
     if ( isFileOpen && threshold >= LoggingThreshold::LG_WARNING )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_WARNING ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_WARNING ).toUpper() << " " << msg
+                  << endl;
     }
   }
 
@@ -123,7 +115,8 @@ namespace radioalert
       qWarning().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_WARNING )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_WARNING ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_WARNING ).toUpper() << " " << msg
+                  << endl;
     }
   }
 
@@ -133,7 +126,8 @@ namespace radioalert
       qWarning().noquote().nospace() << msg.c_str();
     if ( textStream && threshold >= LoggingThreshold::LG_WARNING )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_WARNING ) << msg.c_str() << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_WARNING ).toUpper() << " "
+                  << msg.c_str() << endl;
     }
   }
 
@@ -147,7 +141,7 @@ namespace radioalert
       qInfo().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_INFO )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_INFO ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_INFO ).toUpper() << " " << msg << endl;
     }
   }
 
@@ -157,7 +151,7 @@ namespace radioalert
       qInfo().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_INFO )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_INFO ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_INFO ).toUpper() << " " << msg << endl;
     }
   }
   void Logger::info( const std::string &msg )
@@ -166,7 +160,8 @@ namespace radioalert
       qInfo().noquote().nospace() << msg.c_str();
     if ( textStream && threshold >= LoggingThreshold::LG_INFO )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_INFO ) << msg.c_str() << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_INFO ).toUpper() << " " << msg.c_str()
+                  << endl;
     }
   }
 
@@ -180,7 +175,7 @@ namespace radioalert
       qDebug().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_DEBUG )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_DEBUG ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_DEBUG ).toUpper() << " " << msg << endl;
     }
   }
 
@@ -190,7 +185,7 @@ namespace radioalert
       qDebug().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_DEBUG )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_DEBUG ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_DEBUG ).toUpper() << " " << msg << endl;
     }
   }
 
@@ -200,7 +195,8 @@ namespace radioalert
       qDebug().noquote().nospace() << msg.c_str();
     if ( textStream && threshold >= LoggingThreshold::LG_DEBUG )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_DEBUG ) << msg.c_str() << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_DEBUG ).toUpper() << " " << msg.c_str()
+                  << endl;
     }
   }
 
@@ -214,7 +210,8 @@ namespace radioalert
       qCritical().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_CRITICAL )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_CRITICAL ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_CRITICAL ).toUpper() << " " << msg
+                  << endl;
     }
   }
 
@@ -224,7 +221,8 @@ namespace radioalert
       qCritical().noquote().nospace() << msg;
     if ( textStream && threshold >= LoggingThreshold::LG_CRITICAL )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_CRITICAL ) << msg << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_CRITICAL ).toUpper() << " " << msg
+                  << endl;
     }
   }
 
@@ -234,7 +232,8 @@ namespace radioalert
       qCritical().noquote().nospace() << msg.c_str();
     if ( textStream && threshold >= LoggingThreshold::LG_CRITICAL )
     {
-      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_CRITICAL ) << msg.c_str() << endl;
+      *textStream << getDateString() << LoggingUtils::thresholdNames.key( LoggingThreshold::LG_CRITICAL ).toUpper() << " "
+                  << msg.c_str() << endl;
     }
   }
 
