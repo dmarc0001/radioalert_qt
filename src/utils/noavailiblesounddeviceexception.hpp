@@ -1,12 +1,26 @@
 #ifndef NOAVAILIBLESOUNDDEVICEEXCEPTION_HPP
 #define NOAVAILIBLESOUNDDEVICEEXCEPTION_HPP
 
-#include <QtCore/qglobal.h>
+#include <qglobal.h>
+#include <QException>
 
-class NoAvailibleSoundDeviceException : public QException
+namespace radioalert
 {
-  public:
+  class NoAvailibleSoundDeviceException : public QException
+  {
+    public:
     NoAvailibleSoundDeviceException();
-};
 
-#endif // NOAVAILIBLESOUNDDEVICEEXCEPTION_HPP
+    private:
+    QString message;
+
+    public:
+    NoAvailibleSoundDeviceException( QString const &message );
+    virtual ~NoAvailibleSoundDeviceException(){};
+    QString getMessage( void ) const;
+    NoAvailibleSoundDeviceException *clone() const;
+    void raise() const;
+  };
+};  // namespace radioalert
+
+#endif  // NOAVAILIBLESOUNDDEVICEEXCEPTION_HPP
