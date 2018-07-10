@@ -196,6 +196,42 @@ namespace radioalert
         // Alarm aus, ignorieren
         continue;
       }
+#ifdef DEBUG
+      if ( !ali->getAlertTime().isValid() )
+      {
+        //
+        // kann nicht vorkommen, ausser im debug buils und time == "now"
+        //
+        if ( ali->getAlertIsBusy() )
+        {
+          //
+          // BESETZT!
+          //
+          continue;
+        }
+        //
+        // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
+        //
+        LGINFO( "MainDaemon::slotZyclonTimer: start alert thread (DEBUG MODE)" );
+        // besetzt markieren
+        ali->setAlertIsBusy( true );
+        SingleAlertConfig alrt( *ali );
+        //
+        // den Alarm auf genau jetzt setzen (minus 8 Sekunden)
+        //
+        alrt.setAlertTime( QTime::currentTime().addSecs( -8 ) );
+        RadioAlertThread *newAlert = new RadioAlertThread( lg, alrt, avStDevices, this );
+        // in die Liste der Threads
+        activeThreads.append( newAlert );
+        // verbinde die Endemeldung des Thread mit dem Slot
+        connect( newAlert, &RadioAlertThread::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
+        // und die Selbstzerstörung einleiten, wenn Thread endet
+        connect( newAlert, &RadioAlertThread::finished, newAlert, &RadioAlertThread::deleteLater );
+        // Thread starten
+        newAlert->start();
+        newAlert->startTimer( 1000 );
+      }
+#endif
       // ist ein datum gesetzt, und ist es heute?
       if ( ali->getAlertDate().isValid() && isAlertDateToday( ali->getAlertDate() ) )
       {
@@ -231,7 +267,7 @@ namespace radioalert
         //
         LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
         ali->setAlertIsBusy( true );
-        RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, this );
+        RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, avStDevices, this );
         // in die Liste der Threads
         activeThreads.append( newAlert );
         // verbinde die Endemeldung des Thread mit dem Slot
@@ -246,6 +282,7 @@ namespace radioalert
       {
         // ist der Alarm ausserhalb des Fensters, lösche wenigstens den Marker
         // für "in Arbeit"
+        // Rückfallebene falls woanders etwas schief ging
         // LGDEBUG( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
         ali->setAlertIsBusy( false );
       }
@@ -339,8 +376,20 @@ namespace radioalert
    */
   void MainDaemon::slotAlertFinished( RadioAlertThread *theTread )
   {
+    //
     // der Thread beendet sich...
+    // den alarm wieder freigeben
+    //
+    if ( appConfig->getAlertList().contains( theTread->getAlertName() ) )
+    {
+      //
+      // setzte BUSY auf False
+      //
+      ( appConfig->getAlertList() )[ theTread->getAlertName() ].setAlertIsBusy( false );
+    }
+    //
     // aus der Liste entfernen!
+    //
     if ( activeThreads.contains( theTread ) )
     {
       activeThreads.removeOne( theTread );

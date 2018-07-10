@@ -8,7 +8,7 @@
 #include "config/availabledevices.hpp"
 #include "config/singlealertconfig.hpp"
 #include "global_config.hpp"
-#include "logging/Logger.hpp"
+#include "logging/logger.hpp"
 
 namespace radioalert
 {
@@ -33,6 +33,7 @@ namespace radioalert
                                QObject *parent = nullptr );
     ~RadioAlertThread() override;
     void run( void ) override;
+    QString getAlertName( void ) const;
     void startTimer( int interval );
     void cancelThread( void );
 

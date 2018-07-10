@@ -18,7 +18,7 @@ namespace radioalert
   //
   // für die Lesbarkeit der Sourcen umdefinieren
   //
-  using RadioAlertList = QMap< qint8, SingleAlertConfig >;
+  using RadioAlertList = QMap< QString, SingleAlertConfig >;
 
   class SingleAlertConfig
   {

@@ -57,6 +57,15 @@ namespace radioalert
   }
 
   /**
+   * @brief RadioAlertThread::getAlertName
+   * @return
+   */
+  QString RadioAlertThread::getAlertName( void ) const
+  {
+    return ( localAlertConfig.getAlertName() );
+  }
+
+  /**
    * @brief RadioAlertThread::startTimer
    * @param interval
    */
@@ -65,6 +74,7 @@ namespace radioalert
     //
     // der Timer muss vom aufrufenden Thread gestartet werden :-(
     //
+    LGDEBUG( QLatin1String( "RadioAlertThread::startTimer..." ) );
     alertTimer.start( interval );
   }
 
