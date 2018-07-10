@@ -34,8 +34,7 @@ namespace radioalert
     virtual ~Logger();                                          //! Destruktor
     int startLogging( LoggingThreshold th );                    //! Loggen beginnen
     int startLogging( void );                                   //! loggen beginnen mit festgelegter einstellung
-    // void setThreshold( LoggingThreshold th );                   //! Setzte Loggingstufe
-    // LoggingThreshold getThreshold( void );                      //! lese Loggingstufe
+    bool isDebug( void );                                       //! debuggingMode?
     //
     void info( const QString &msg );      //! INFO Ausgaben
     void info( const std::string &msg );  //! INFO Ausgaben

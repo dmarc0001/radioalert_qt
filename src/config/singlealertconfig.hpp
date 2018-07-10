@@ -7,6 +7,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTime>
+#include "../global_config.hpp"
 
 namespace radioalert
 {
@@ -15,13 +16,14 @@ namespace radioalert
   //
   class SingleAlertConfig;
   //
-  // für die Lesbarkeit der Sourcen umdefinitionen
+  // für die Lesbarkeit der Sourcen umdefinieren
   //
-  using RadioAlertList = QMap< qint8, SingleAlertConfig >;
+  using RadioAlertList = QMap< QString, SingleAlertConfig >;
 
   class SingleAlertConfig
   {
     private:
+    QString alertName;         //! Name des Alarmes (aus der Konfigurationsdatei)
     QDate alertDate;           //! Datum oder leer
     QTime alertTime;           //! Weckzeit, obligatorisch
     bool alertRaiseVol;        //! Lautstärke langsam steigern?
@@ -35,6 +37,7 @@ namespace radioalert
     QString alertType;         //! Art des Alarms
     QStringList alertDays;     //! an welchen Tagen? (leer == jeden)
     QString alertLocation;     //! Stationsnummer?
+    bool alertIsBusy;          //! ist der alarm gerade in Arbeit?
 
     public:
     explicit SingleAlertConfig( void );
@@ -67,6 +70,11 @@ namespace radioalert
     void setAlertDays( const QStringList &value );
     QString getAlertLocation() const;
     void setAlertLocation( const QString &value );
+    bool getAlertIsBusy() const;
+    void setAlertIsBusy( bool value );
+    QString getAlertName() const;
+    void setAlertName( const QString &value );
+    QByteArray serialize( void );
   };
 }  // namespace radioalert
 #endif  // SINGLEALERTCONFIG_HPP

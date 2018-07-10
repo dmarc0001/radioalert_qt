@@ -2,8 +2,29 @@
 
 namespace radioalert
 {
-  SingleAlertConfig::SingleAlertConfig( void )
+  SingleAlertConfig::SingleAlertConfig( void ) : alertIsBusy( false )
   {
+  }
+
+  QByteArray SingleAlertConfig::serialize( void )
+  {
+    QLatin1String tr( "true" );
+    QLatin1String fa( "false" );
+    //
+    QString serStr = alertName;
+    serStr += alertDate.toString( "yyyy-MM-dd" );
+    serStr += alertTime.toString( "hh_mm" );
+    serStr += alertRaiseVol ? tr : fa;
+    serStr += QString( "%1" ).arg( alertVolume, 3, 10, QChar( '0' ) );
+    serStr += alertDevices.join( '-' ).append( sourceAccount ).append( alertNote );
+    serStr += alertEnable ? tr : fa;
+    serStr += alertSource;
+    serStr += QString( "%1" )
+                  .arg( alertDuration, 5, 10, QChar( '0' ) )
+                  .append( alertType )
+                  .append( alertDays.join( '-' ) )
+                  .append( alertLocation );
+    return ( serStr.toUtf8() );
   }
 
   QDate SingleAlertConfig::getAlertDate() const
@@ -134,6 +155,26 @@ namespace radioalert
   void SingleAlertConfig::setAlertLocation( const QString &value )
   {
     alertLocation = value;
+  }
+
+  bool SingleAlertConfig::getAlertIsBusy() const
+  {
+    return alertIsBusy;
+  }
+
+  void SingleAlertConfig::setAlertIsBusy( bool value )
+  {
+    alertIsBusy = value;
+  }
+
+  QString SingleAlertConfig::getAlertName() const
+  {
+    return alertName;
+  }
+
+  void SingleAlertConfig::setAlertName( const QString &value )
+  {
+    alertName = value;
   }
 
 }  // namespace radioalert

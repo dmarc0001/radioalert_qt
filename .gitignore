@@ -2,3 +2,6 @@ QT-5*/
 dlib/
 rlib/
 *.qm
+*.autosave
+*.user
+

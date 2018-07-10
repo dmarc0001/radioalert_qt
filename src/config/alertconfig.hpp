@@ -7,6 +7,7 @@
 #include <QRegExp>
 #include <QSettings>
 #include <QString>
+#include "../global_config.hpp"
 #include "singlealertconfig.hpp"
 
 namespace radioalert
@@ -28,7 +29,7 @@ namespace radioalert
     static const QString daysKey;
     static const QString locationKey;
     static const QRegExp alertGroupToken;
-    static const QString alertTemplate;
+    // static const QString alertTemplate;
     static const QString dateFormatToken;
     static const QString timeFormatToken;
 

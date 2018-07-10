@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QString>
 #include <QTimeZone>
+#include "../global_config.hpp"
 #include "../logging/loggingthreshold.hpp"
 
 namespace radioalert
@@ -26,8 +27,6 @@ namespace radioalert
     static const QString guiExtraBottom1Key;  //! Extra Fusszeile
     static const QString guiExtraBottom2Key;  //! Extra 2. Fusszeile
     static const QString loglevelKey;         //! loglevel?
-    static const QString path1Key;            //! Pfad nummer 1
-    static const QString path2Key;            //! Pfad nummer 2
     static const QString guiHeaderKey;        //! benutzerdefinierte Titelzeile
     static const QString devicesFileKey;      //! evtl extern discoverte Soundtouch Devices
     static const QString guiThemeKey;         //! welches Thema soll die GUI haben
@@ -89,6 +88,7 @@ namespace radioalert
     void setDevicesFile( const QString &value );
     QString getGuiTheme() const;
     void setGuiTheme( const QString &value );
+    QByteArray serialize( void );
   };
 }  // namespace radioalert
 #endif  // GLOBALCONFIG_HPP
