@@ -19,7 +19,8 @@ namespace radioalert
   {
     public:
     QString hostName;
-    qint16 hostPort;
+    qint16 httpPort;
+    qint16 wsPort;
     QString deviceTyype;
     QString deviceName;
   };
@@ -28,7 +29,8 @@ namespace radioalert
   {
     private:
     static const QString hostName;    //! Adresse/Hostname des Gerätes
-    static const QString hostPort;    //! Port für Web
+    static const QString httpPort;    //! Port für Web
+    static const QString wsPort;      //! Port für Websocket
     static const QString deviceType;  //! Typenbezeichnung
     static const QString deviceName;  //! Menschenlesbarer Name (für Anzeigen)
     QMutex configLocker;              //! verhindert gleichzeitige verändernde zugriffe auf config
