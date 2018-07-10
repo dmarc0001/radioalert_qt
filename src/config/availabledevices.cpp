@@ -30,14 +30,14 @@ namespace radioalert
     // Locken während die config geladen wird
     // QMutexLocker locker( &configLocker );
 
-    qDebug().noquote() << "Devices file: <" + fileName + ">";
+    qDebug().noquote() << QLatin1String( "Devices file: <" ) + fileName + QLatin1String( ">" );
     QFileInfo configFileInfo( fileName );
     if ( !configFileInfo.exists() )
     {
       throw ConfigfileNotExistException( QString( "device configfile %1 not exist" ).arg( fileName ) );
     }
     QSettings settings( fileName, QSettings::IniFormat );
-    qDebug().noquote() << "load settings from" << fileName;
+    qDebug().noquote() << QLatin1String( "load settings from" ) << fileName;
     //
     // alle Gruppen (devices) laden
     //
@@ -48,7 +48,7 @@ namespace radioalert
     //
     for ( sli = groups.begin(); sli != groups.end(); sli++ )
     {
-      qDebug().nospace().noquote() << endl << "load device: " << *sli;
+      qDebug().nospace().noquote() << endl << QLatin1String( "load device: " ) << *sli;
       //
       // Gruppe eröffnen
       //
@@ -57,23 +57,26 @@ namespace radioalert
       //
       // Hostnamen erfragen
       //
-      stDevice.hostName = settings.value( hostName, "localhost" ).toString();
-      qDebug().nospace().noquote() << "AvailablaDevices::loadSettings: " << hostName << ": " << stDevice.hostName;
+      stDevice.hostName = settings.value( hostName, QLatin1String( "localhost" ) ).toString();
+      qDebug().nospace().noquote() << "AvailablaDevices::loadSettings: " << hostName << QLatin1String( ": " ) << stDevice.hostName;
       //
       // device name erfragen
       //
-      stDevice.deviceName = settings.value( deviceName, "no name" ).toString();
-      qDebug().nospace().noquote() << "AvailablaDevices::loadSettings: " << deviceName << ": " << stDevice.deviceName;
+      stDevice.deviceName = settings.value( deviceName, QLatin1String( "no name" ) ).toString();
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << deviceName << QLatin1String( ": " )
+                                   << stDevice.deviceName;
       //
       // Host type erfragen
       //
-      stDevice.deviceTyype = settings.value( deviceType, "unknown" ).toString();
-      qDebug().nospace().noquote() << "AvailablaDevices::loadSettings: " << deviceType << ": " << stDevice.deviceTyype;
+      stDevice.deviceTyype = settings.value( deviceType, QLatin1String( "unknown" ) ).toString();
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << deviceType << QLatin1String( ": " )
+                                   << stDevice.deviceTyype;
       //
       // Host port erfragen
       //
-      stDevice.hostPort = static_cast< qint16 >( settings.value( hostPort, "8090" ).toString().toInt() );
-      qDebug().nospace().noquote() << "AvailablaDevices::loadSettings: " << hostPort << ": " << stDevice.hostPort;
+      stDevice.hostPort = static_cast< qint16 >( settings.value( hostPort, QLatin1String( "8090" ) ).toString().toInt() );
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << hostPort << QLatin1String( ": " )
+                                   << stDevice.hostPort;
       //
       settings.endGroup();
       stDevices.insert( stDevice.hostName, stDevice );

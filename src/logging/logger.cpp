@@ -1,4 +1,4 @@
-﻿#include "Logger.hpp"
+﻿#include "logger.hpp"
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QFileInfo>
@@ -12,30 +12,21 @@ namespace radioalert
    * @param lFile
    */
   Logger::Logger( const std::shared_ptr< AppConfigClass > _config )
-      : threshold( LoggingThreshold::LG_WARNING )
+      : threshold( _config->getGlobalConfig().getLoglevel() )
       , logFile( nullptr )
       , textStream( nullptr )
       , configClass( _config )
       , isFileOpen( false )
       , logToConsole( true )
-      , loggerIsDebug( false )
   {
-    //
-    // einen eigenen Handler für debug ausgaben einbinden
-    //
-    // qInstallMessageHandler( &Logger::messageOutput );
-    if ( threshold == LoggingThreshold::LG_DEBUG )
-      loggerIsDebug = true;
   }
 
-  Logger::Logger() : threshold( LoggingThreshold::LG_WARNING ), configClass( nullptr ), isFileOpen( false ), loggerIsDebug( false )
+  Logger::Logger() : threshold( LoggingThreshold::LG_WARNING ), configClass( nullptr ), isFileOpen( false )
   {
     //
     // einen eigenen Handler für debug ausgaben einbinden
     //
     // qInstallMessageHandler( &Logger::messageOutput );
-    if ( threshold == LoggingThreshold::LG_DEBUG )
-      loggerIsDebug = true;
   }
 
   Logger::~Logger()
@@ -45,7 +36,7 @@ namespace radioalert
 
   bool Logger::isDebug( void )
   {
-    return ( loggerIsDebug );
+    return ( threshold == LoggingThreshold::LG_DEBUG );
   }
 
   /**
@@ -55,8 +46,6 @@ namespace radioalert
   int Logger::startLogging( LoggingThreshold th )
   {
     threshold = th;
-    if ( threshold == LoggingThreshold::LG_DEBUG )
-      loggerIsDebug = true;
     return ( startLogging() );
   }
 

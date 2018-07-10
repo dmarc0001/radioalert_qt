@@ -28,7 +28,6 @@ namespace radioalert
     static const QString dateTimeFormat;                  //! Format der Zeitausgabe
     bool isFileOpen;                                      //! true, wenn logdatei beschrieben werden kann
     bool logToConsole;                                    //! loggen zur Konsole?
-    bool loggerIsDebug;                                   //! ist der Logger im DEBUG Mode?
 
     public:
     Logger( const std::shared_ptr< AppConfigClass > _config );  //! Konstruktor mit Zeiger auf das Konfig-Objekt

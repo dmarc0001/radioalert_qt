@@ -14,7 +14,7 @@ namespace radioalert
    * @brief LoggerClass::LoggerClass Der Konstruktor mit Name der Konfigdatei im Programmverzeichnis
    * @param cfg
    */
-  AppConfigClass::AppConfigClass( void ) : configFileName( QCoreApplication::applicationName() + ".ini" )
+  AppConfigClass::AppConfigClass( void ) : configFileName( QCoreApplication::applicationName().append( QLatin1String( ".ini" ) ) )
   {
   }
 
@@ -27,7 +27,7 @@ namespace radioalert
    */
   AppConfigClass::~AppConfigClass( void )
   {
-    qDebug().noquote() << "...";
+    qDebug().noquote() << QLatin1String( "..." );
     saveSettings();
   }
 
@@ -59,21 +59,21 @@ namespace radioalert
     // Locken während die config geladen wird
     QMutexLocker locker( &configLocker );
 
-    qDebug().noquote() << "CONFIG: <" + configFileName + ">";
+    qDebug().noquote() << QLatin1String( "CONFIG: <" ) << configFileName << QLatin1String( ">" );
     QSettings settings( configFileName, QSettings::IniFormat );
-    qDebug().noquote() << "load settings from" << configFileName;
+    qDebug().noquote() << QLatin1String( "load settings from" ) << configFileName;
 
-    qDebug() << "global settings load...";
+    qDebug() << QLatin1String( "global settings load..." );
     if ( !globalConfig.loadSettings( settings ) )
       globalConfig.makeDefaultSettings( settings );
-    qDebug() << "global settings load...OK";
+    qDebug() << QLatin1String( "global settings load...OK" );
     //
     // Alarme auslesen mit lokalem Objekt
     //
     AlertConfig alConfig;
-    qDebug() << "alert settings load...";
+    qDebug() << QLatin1String( "alert settings load..." );
     alConfig.loadSettings( settings, alerts );
-    qDebug() << "alert settings load...OK";
+    qDebug() << QLatin1String( "alert settings load...OK" );
     configHashLoad = makeConfigHash();
     configFileHash = makeConfigfileHash();
     return ( true );
@@ -99,9 +99,9 @@ namespace radioalert
     // Locken während die config gesichert wird
     QMutexLocker locker( &configLocker );
 
-    qDebug().noquote() << "...";
+    qDebug().noquote() << QLatin1String( "..." );
     bool retVal = true;
-    qDebug().noquote() << "save to <" + configFileName + ">";
+    qDebug().noquote() << QLatin1String( "save to <" ) << configFileName << QLatin1String( ">" );
     QSettings settings( configFileName, QSettings::IniFormat );
     //
     // die globalen sichern
@@ -152,7 +152,7 @@ namespace radioalert
     QByteArray serialized;
     RadioAlertList::Iterator ral;
     //
-    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: clobalConfig...";
+    qDebug().nospace().noquote() << QLatin1String( "AppConfigClass::makeConfigHash: clobalConfig..." );
     serialized.append( globalConfig.serialize() );
     //
     for ( ral = alerts.begin(); ral != alerts.end(); ++ral )
@@ -162,7 +162,7 @@ namespace radioalert
     QCryptographicHash qhash( QCryptographicHash::Md5 );
     qhash.reset();
     qhash.addData( serialized );
-    qDebug().nospace().noquote() << "AppConfigClass::makeConfigHash: clobalConfig...OK";
+    qDebug().nospace().noquote() << QLatin1String( "AppConfigClass::makeConfigHash: clobalConfig...OK" );
     return ( qhash.result() );
   }
 
@@ -175,7 +175,7 @@ namespace radioalert
     // config während ausführung sperren
     // QMutexLocker locker( &configLocker );
 
-    qDebug().noquote().nospace() << "AppConfigClass::makeConfigfileHash: calculate hash for config file...";
+    qDebug().noquote().nospace() << QLatin1String( "AppConfigClass::makeConfigfileHash: calculate hash for config file..." );
     QCryptographicHash crypto( QCryptographicHash::Md5 );
     QFile file( configFileName );
     file.open( QFile::ReadOnly );
@@ -183,7 +183,7 @@ namespace radioalert
     {
       crypto.addData( file.read( 8192 ) );
     }
-    qDebug().noquote().nospace() << "AppConfigClass::makeConfigfileHash: calculate hash for config file...OK";
+    qDebug().noquote().nospace() << QLatin1String( "AppConfigClass::makeConfigfileHash: calculate hash for config file...OK" );
     return ( crypto.result() );
   }
 
