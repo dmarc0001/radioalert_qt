@@ -34,7 +34,7 @@ namespace radioalert
   bool GlobalConfig::loadSettings( QSettings &settings )
   {
     bool retval = true;
-    qDebug().noquote() << "";
+    qDebug().noquote() << QLatin1String( "" );
     //
     // Öffne die Gruppe Logeinstellungen als allererstes
     //
@@ -42,75 +42,76 @@ namespace radioalert
     //
     // Lese den Dateinamen for das Logfile
     //
-    logFile = settings.value( logFileKey, "" ).toString();
+    logFile = settings.value( logFileKey, QLatin1String( "" ) ).toString();
     if ( logFile.isEmpty() || logFile.isNull() )
     {
       settings.endGroup();
       return ( false );
     }
-    qDebug().noquote().nospace() << "log file: <" << logFile << ">";
+    qDebug().noquote().nospace() << QLatin1String( "log file: <" ) << logFile << ">";
     //
     // Lese die Loggerstufe
     //
-    loglevel = LoggingUtils::thresholdNames.value( settings.value( loglevelKey, "warning" ).toString().toLower() );
-    qDebug().noquote().nospace() << "log level: <" << LoggingUtils::thresholdNames.key( loglevel ) << ">";
+    loglevel = LoggingUtils::thresholdNames.value( settings.value( loglevelKey, QLatin1String( "warning" ) ).toString().toLower() );
+    qDebug().noquote().nospace() << QLatin1String( "log level: <" ) << LoggingUtils::thresholdNames.key( loglevel )
+                                 << QLatin1String( ">" );
     //
     // loggen zur Konsole
     //
-    logToConsole = settings.value( logToConsoleKey, "true" ).toBool();
-    qDebug().noquote().nospace() << "log to console: <" << logToConsole << ">";
+    logToConsole = settings.value( logToConsoleKey, QLatin1String( "true" ) ).toBool();
+    qDebug().noquote().nospace() << QLatin1String( "log to console: <" ) << logToConsole << QLatin1String( ">" );
     //
     // server port
     //
-    serverPort = static_cast< qint16 >( settings.value( serverPortKey, "26106" ).toInt() & 0xffff );
-    qDebug().noquote().nospace() << "server port: <" << serverPort << ">";
+    serverPort = static_cast< qint16 >( settings.value( serverPortKey, QLatin1String( "26106" ) ).toInt() & 0xffff );
+    qDebug().noquote().nospace() << QLatin1String( "server port: <" ) << serverPort << QLatin1String( ">" );
     //
     // server Hostaddr
     //
-    serverAddr = QHostAddress( settings.value( serverAddrKey, "localhost" ).toString() );
-    qDebug().noquote().nospace() << "server host addr: <" << serverAddr.toString() << ">";
+    serverAddr = QHostAddress( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString() );
+    qDebug().noquote().nospace() << QLatin1String( "server host addr: <" ) << serverAddr.toString() << QLatin1String( ">" );
     //
     // Time zone
     //
-    timeZone = QTimeZone( settings.value( timeZoneKey, "UTC+01:00" ).toByteArray() );
-    qDebug().noquote().nospace() << "time zone is: <" << timeZone.id() << ">";
+    timeZone = QTimeZone( settings.value( timeZoneKey, QLatin1String( "UTC+01:00" ) ).toByteArray() );
+    qDebug().noquote().nospace() << QLatin1String( "time zone is: <" ) << timeZone.id() << QLatin1String( ">" );
     //
     // lautstärke sanft als default?
     //
-    raiseVol = settings.value( raiseVolKey, "false" ).toBool();
-    qDebug().noquote().nospace() << "raise vol default is: <" << raiseVol << ">";
+    raiseVol = settings.value( raiseVolKey, QLatin1String( "false" ) ).toBool();
+    qDebug().noquote().nospace() << QLatin1String( "raise vol default is: <" ) << raiseVol << QLatin1String( ">" );
     //
     // network timeout
     //
-    networkTimeout = static_cast< qint16 >( settings.value( networkTimeoutKey, "10" ).toInt() & 0xffff );
-    qDebug().noquote().nospace() << "network timeout is: <" << networkTimeout << ">";
+    networkTimeout = static_cast< qint16 >( settings.value( networkTimeoutKey, QLatin1String( "10" ) ).toInt() & 0xffff );
+    qDebug().noquote().nospace() << QLatin1String( "network timeout is: <" ) << networkTimeout << QLatin1String( ">" );
     //
     // autorefresh
     //
-    autorefresh = static_cast< qint16 >( settings.value( autorefreshKey, "5" ).toInt() & 0xffff );
-    qDebug().noquote().nospace() << "auto refresh is: <" << autorefresh << ">";
+    autorefresh = static_cast< qint16 >( settings.value( autorefreshKey, QLatin1String( "5" ) ).toInt() & 0xffff );
+    qDebug().noquote().nospace() << QLatin1String( "auto refresh is: <" ) << autorefresh << QLatin1String( ">" );
     //
     // gui extra header
     //
-    guiHeader = settings.value( guiHeaderKey, "Radio Alert" ).toString();
-    qDebug().noquote().nospace() << "gui extra header: <" << guiHeader << ">";
+    guiHeader = settings.value( guiHeaderKey, QLatin1String( "Radio Alert" ) ).toString();
+    qDebug().noquote().nospace() << QLatin1String( "gui extra header: <" ) << guiHeader << QLatin1String( ">" );
     //
     // gui extra bottom 1 und 2
     //
-    guiExtraBottom1 = settings.value( guiExtraBottom1Key, "RADIOALERT" ).toString();
-    qDebug().noquote().nospace() << "gui extra bottom line 1: <" << guiExtraBottom1 << ">";
-    guiExtraBottom2 = settings.value( guiExtraBottom2Key, "for Soundtouch devices" ).toString();
-    qDebug().noquote().nospace() << "gui extra bottom line 2: <" << guiExtraBottom2 << ">";
+    guiExtraBottom1 = settings.value( guiExtraBottom1Key, QLatin1String( "RADIOALERT" ) ).toString();
+    qDebug().noquote().nospace() << QLatin1String( "gui extra bottom line 1: <" ) << guiExtraBottom1 << QLatin1String( ">" );
+    guiExtraBottom2 = settings.value( guiExtraBottom2Key, QLatin1String( "for Soundtouch devices" ) ).toString();
+    qDebug().noquote().nospace() << QLatin1String( "gui extra bottom line 2: <" ) << guiExtraBottom2 << QLatin1String( ">" );
     //
     // Gui devices file (discovered devices)
     //
-    devicesFile = settings.value( devicesFileKey, "." ).toString();
-    qDebug().noquote().nospace() << "devices file: <" << devicesFile << ">";
+    devicesFile = settings.value( devicesFileKey, QLatin1String( "." ) ).toString();
+    qDebug().noquote().nospace() << QLatin1String( "devices file: <" ) << devicesFile << QLatin1String( ">" );
     //
     // gui theme
     //
-    guiTheme = settings.value( guiThemeKey, "a" ).toString();
-    qDebug().noquote().nospace() << "gui theme: <" << guiTheme << ">";
+    guiTheme = settings.value( guiThemeKey, QLatin1String( "a" ) ).toString();
+    qDebug().noquote().nospace() << QLatin1String( "gui theme: <" ) << guiTheme << QLatin1String( ">" );
     //
     // Ende der Gruppe
     //
@@ -123,8 +124,8 @@ namespace radioalert
 
   bool GlobalConfig::saveSettings( QSettings &settings )
   {
-    qDebug().noquote() << "";
-    qDebug().noquote() << "save globel settings....";
+    qDebug().noquote() << QLatin1String( "" );
+    qDebug().noquote() << QLatin1String( "save globel settings...." );
     settings.beginGroup( groupName );
     settings.setValue( logFileKey, logFile );
     settings.setValue( logToConsoleKey, logToConsole );
@@ -151,7 +152,7 @@ namespace radioalert
     //
     // alle Einstellungen leeren
     //
-    qDebug().noquote() << "remove old settings, if there one...";
+    qDebug().noquote() << QLatin1String( "remove old settings, if there one present..." );
     settings.remove( logFileKey );
     settings.remove( logToConsoleKey );
     settings.remove( serverPortKey );
@@ -169,8 +170,8 @@ namespace radioalert
     //
     // neues Logfile setzen
     //
-    qDebug().noquote() << "set an value for log file...";
-    logFile = QCoreApplication::applicationName().append( ".log" );
+    qDebug().noquote() << QLatin1String( "set an value for log file..." );
+    logFile = QCoreApplication::applicationName().append( QLatin1String( ".log" ) );
     settings.setValue( logFileKey, logFile );
     settings.endGroup();
     return ( loadSettings( settings ) );
@@ -180,9 +181,9 @@ namespace radioalert
   {
     QString serializeStr( QString( "%1" ).arg( serverPort, 5, 10, QChar( '0' ) ) );
     serializeStr += serverAddr.toString();
-    serializeStr += logToConsole ? "true" : "false";
+    serializeStr += logToConsole ? QLatin1String( "true" ) : QLatin1String( "false" );
     serializeStr += timeZone.id();
-    serializeStr += raiseVol ? "true" : "false";
+    serializeStr += raiseVol ? QLatin1String( "true" ) : QLatin1String( "false" );
     serializeStr += QString( "%1" ).arg( networkTimeout, 5, 10, QChar( '0' ) );
     serializeStr += QString( "%1" ).arg( autorefresh, 5, 10, QChar( '0' ) );
     serializeStr += guiExtraBottom1 + guiExtraBottom2 + logFile;

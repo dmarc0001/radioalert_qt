@@ -3,10 +3,12 @@
 
 #define LGDEBUG( val ) \
   if ( lg->isDebug() ) \
-  lg->debug( val )
+  {                    \
+    lg->debug( val );  \
+  }
 
-#define LGINFO lg->info
-#define LGWARN lg->warn
-#define LGCRIT lg->crit
+#define LGINFO( val ) lg->info( val )
+#define LGWARN( val ) lg->warn( val )
+#define LGCRIT( val ) lg->crit( val )
 
 #endif  // GLOBAL_CONFIG_HPP

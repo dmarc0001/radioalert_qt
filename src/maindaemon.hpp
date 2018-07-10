@@ -17,7 +17,7 @@
 #include "config/appconfigclass.hpp"
 #include "config/availabledevices.hpp"
 #include "global_config.hpp"
-#include "logging/Logger.hpp"
+#include "logging/logger.hpp"
 #include "radioalertthread.hpp"
 #include "utils/configfilenotexistexception.hpp"
 
