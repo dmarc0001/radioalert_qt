@@ -6,8 +6,10 @@
 
 MAJOR                                  = 0
 MINOR                                  = 1
-PATCH                                  = 8
+PATCH                                  = 9
 BUILD                                  = 0
+
+LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
 
 win32:VERSION                          = $${MAJOR}.$${MINOR}.$${PATCH}.$${BUILD} # major.minor.patch.build
 else:VERSION                           = $${MAJOR}.$${MINOR}.$${PATCH}    # major.minor.patch
@@ -30,6 +32,13 @@ CONFIG                                 += console
 
 TARGET                                 = alert_daemon
 TEMPLATE                               = app
+MOC_DIR                                = moc
+RCC_DIR                                = rcc
+UI_DIR                                 = ui
+
+# fuer LIBRARY
+INCLUDEPATH                            += $${LIBSOUNDTOUCHDIR}/include
+DEPENDPATH                             += $${LIBSOUNDTOUCHDIR}/include
 
 target.path                            = /home/pi/qt5pi/alert_daemon
 INSTALLS                               += target
@@ -37,31 +46,30 @@ INSTALLS                               += target
 CONFIG(release, debug|release) {
   DEFINES                              += QT_NO_DEBUG_OUTPUT
   DESTDIR                              = rout
+  # raspi oder lokal
   contains(CONFIG, RASPI) {
     message( RASPI BUILD )
-    LIBS                               += -L$$PWD/rlib/RASPI -lsoundtouch_qt
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-RASPIGCC
   } else {
     message( LOCAL BUILD )
-    LIBS                               += -L$$PWD/rlib/X86_64 -lsoundtouch_qt
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
   }
+  LIBS                                 += -lsoundtouch_qt
   DEFINES                              += QT_NO_DEBUG_OUTPUT
 }
 CONFIG(debug, debug|release) {
   DESTDIR                              = dout
+  # raspi oder lokal
   contains(CONFIG, RASPI) {
     message( RASPI BUILD )
-    LIBS                               += -L$$PWD/dlib/RASPI -lsoundtouch_qt
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-RASPIGCC
   } else {
     message( LOCAL BUILD )
-    LIBS                               += -L$$PWD/dlib/X86_64 -lsoundtouch_qt
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
   }
+  LIBS                                 += -lsoundtouch_debug_qt
   DEFINES                              += DEBUG
 }
-
-
-MOC_DIR                                = moc
-RCC_DIR                                = rcc
-UI_DIR                                 = ui
 
 message( radio alert daemon version: $$VERSION )
 
@@ -76,7 +84,8 @@ SOURCES += \
     src/radioalertthread.cpp \
     src/config/config_all.cpp \
     src/config/availabledevices.cpp \
-    src/logging/logger.cpp
+    src/logging/logger.cpp \
+    src/utils/noavailiblesounddeviceexception.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
@@ -90,8 +99,10 @@ HEADERS += \
     src/global_config.hpp \
     src/config/config_all.hpp \
     src/config/availabledevices.hpp \
-    src/logging/logger.hpp
+    src/logging/logger.hpp \
+    src/utils/noavailiblesounddeviceexception.hpp
 
 DISTFILES += \
     alert_daemon.ini \
     available_devices.ini
+

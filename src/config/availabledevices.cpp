@@ -86,7 +86,7 @@ namespace radioalert
                                    << stDevice.wsPort;
       //
       settings.endGroup();
-      stDevices.insert( stDevice.hostName, stDevice );
+      stDevices.insert( stDevice.deviceName, stDevice );
     }
     return ( true );
   }
