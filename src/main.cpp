@@ -43,7 +43,9 @@ int main( int argc, char *argv[] )
   //
   // Signalhandler installieren
   //
+#ifndef WIN32
   std::signal( SIGHUP, signalHandler );
+#endif
   std::signal( SIGINT, signalHandler );
   //
   // Schliessen der App an QCoreApplication mitteilen
@@ -71,6 +73,7 @@ void signalHandler( int signal )
       mIntSignalHahdler();
     }
   }
+#ifndef WIN32
   if ( signal == SIGHUP )
   {
     //
@@ -84,4 +87,5 @@ void signalHandler( int signal )
       mHupSignalHahdler();
     }
   }
+#endif
 }

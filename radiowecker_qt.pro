@@ -9,11 +9,12 @@ MINOR                                  = 1
 PATCH                                  = 9
 BUILD                                  = 0
 
-LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
+LIBSOUNDTOUCHDIR                       = $${PWD}/../soundtouchlib_qt
 
 win32:VERSION                          = $${MAJOR}.$${MINOR}.$${PATCH}.$${BUILD} # major.minor.patch.build
 else:VERSION                           = $${MAJOR}.$${MINOR}.$${PATCH}    # major.minor.patch
 
+DEFINES                                += SOUNDTOUCH_QT_LIB_IMPORT
 DEFINES                                += QT_DEPRECATED_WARNINGS
 DEFINES                                += $$DEBUG
 DEFINES                                += VMAJOR=$$MAJOR
@@ -30,11 +31,11 @@ CONFIG                                 += stl
 CONFIG                                 += c++11
 CONFIG                                 += console
 
-TARGET                                 = alert_daemon
 TEMPLATE                               = app
 MOC_DIR                                = moc
 RCC_DIR                                = rcc
 UI_DIR                                 = ui
+DESTDIR                                = out
 
 # fuer LIBRARY
 INCLUDEPATH                            += $${LIBSOUNDTOUCHDIR}/include
@@ -44,30 +45,18 @@ target.path                            = /home/pi/qt5pi/alert_daemon
 INSTALLS                               += target
 
 CONFIG(release, debug|release) {
+TARGET                                 = alert_daemon
   DEFINES                              += QT_NO_DEBUG_OUTPUT
-  DESTDIR                              = rout
-  # raspi oder lokal
-  contains(CONFIG, RASPI) {
-    message( RASPI BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-RASPIGCC
-  } else {
-    message( LOCAL BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
-  }
-  LIBS                                 += -lsoundtouch_qt
+  LIBS                                 += -L$${LIBSOUNDTOUCHDIR}/lib
+  win32:LIBS                           += -lsoundtouch_qt1
+  else:LIBS                            += -lsoundtouch_qt1
   DEFINES                              += QT_NO_DEBUG_OUTPUT
 }
 CONFIG(debug, debug|release) {
-  DESTDIR                              = dout
-  # raspi oder lokal
-  contains(CONFIG, RASPI) {
-    message( RASPI BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-RASPIGCC
-  } else {
-    message( LOCAL BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
-  }
-  LIBS                                 += -lsoundtouch_debug_qt
+  TARGET                               = alert_daemon_d
+  LIBS                                 += -L$${LIBSOUNDTOUCHDIR}/lib
+  win32:LIBS                           += -lsoundtouch_debug_qt1
+  else:LIBS                            += -lsoundtouch_debug_qt
   DEFINES                              += DEBUG
 }
 
