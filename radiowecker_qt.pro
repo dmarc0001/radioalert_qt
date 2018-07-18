@@ -6,7 +6,7 @@
 
 MAJOR                                  = 0
 MINOR                                  = 1
-PATCH                                  = 9
+PATCH                                  = 10
 BUILD                                  = 0
 
 LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
@@ -14,6 +14,7 @@ LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
 win32:VERSION                          = $${MAJOR}.$${MINOR}.$${PATCH}.$${BUILD} # major.minor.patch.build
 else:VERSION                           = $${MAJOR}.$${MINOR}.$${PATCH}    # major.minor.patch
 
+DEFINES                                += SOUNDTOUCH_QT_LIB_LIBRARY
 DEFINES                                += QT_DEPRECATED_WARNINGS
 DEFINES                                += $$DEBUG
 DEFINES                                += VMAJOR=$$MAJOR
@@ -30,11 +31,11 @@ CONFIG                                 += stl
 CONFIG                                 += c++11
 CONFIG                                 += console
 
-TARGET                                 = alert_daemon
 TEMPLATE                               = app
 MOC_DIR                                = moc
 RCC_DIR                                = rcc
 UI_DIR                                 = ui
+DESTDIR                                = out
 
 # fuer LIBRARY
 INCLUDEPATH                            += $${LIBSOUNDTOUCHDIR}/include
@@ -44,8 +45,8 @@ target.path                            = /home/pi/qt5pi/alert_daemon
 INSTALLS                               += target
 
 CONFIG(release, debug|release) {
+  TARGET                               = alert_daemon
   DEFINES                              += QT_NO_DEBUG_OUTPUT
-  DESTDIR                              = rout
   # raspi oder lokal
   contains(CONFIG, RASPI) {
     message( RASPI BUILD )
@@ -58,7 +59,7 @@ CONFIG(release, debug|release) {
   DEFINES                              += QT_NO_DEBUG_OUTPUT
 }
 CONFIG(debug, debug|release) {
-  DESTDIR                              = dout
+  TARGET                                 = alert_daemon_d
   # raspi oder lokal
   contains(CONFIG, RASPI) {
     message( RASPI BUILD )
@@ -81,11 +82,11 @@ SOURCES += \
     src/config/alertconfig.cpp \
     src/config/appconfigclass.cpp \
     src/utils/configfilenotexistexception.cpp \
-    src/radioalertthread.cpp \
     src/config/config_all.cpp \
     src/config/availabledevices.cpp \
     src/logging/logger.cpp \
-    src/utils/noavailiblesounddeviceexception.cpp
+    src/utils/noavailiblesounddeviceexception.cpp \
+    src/singleradioalert.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
@@ -95,12 +96,12 @@ HEADERS += \
     src/config/appconfigclass.hpp \
     src/main.hpp \
     src/utils/configfilenotexistexception.hpp \
-    src/radioalertthread.hpp \
     src/global_config.hpp \
     src/config/config_all.hpp \
     src/config/availabledevices.hpp \
     src/logging/logger.hpp \
-    src/utils/noavailiblesounddeviceexception.hpp
+    src/utils/noavailiblesounddeviceexception.hpp \
+    src/singleradioalert.hpp
 
 DISTFILES += \
     alert_daemon.ini \

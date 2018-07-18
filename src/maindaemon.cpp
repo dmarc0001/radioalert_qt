@@ -37,6 +37,9 @@ namespace radioalert
     lg->startLogging();
   }
 
+  /**
+   * @brief MainDaemon::~MainDaemon
+   */
   MainDaemon::~MainDaemon()
   {
     lg->shutdown();
@@ -103,20 +106,18 @@ namespace radioalert
   {
     LGINFO( "MainDaemon::requestQuit..." );
     //
-    // Alle eventuell vorhandenen Thread abschiessen
+    // Alle eventuell vorhandenen Alarme beenden
     //
-    QVector< RadioAlertThread * >::Iterator alt;
-    for ( alt = activeThreads.begin(); alt != activeThreads.end(); alt++ )
+    SingleRadioAlertList::Iterator alt;
+    for ( alt = activeAlerts.begin(); alt != activeAlerts.end(); alt++ )
     {
       LGINFO( "MainDaemon::requestQuit: kill thread..." );
       // signalisiere sein baldiges Ende
-      ( *alt )->cancelThread();
-      // ware max 3.5 Sekunden
-      ( *alt )->wait( 3500 );
-      // wenn er noch läuft TEMRINIEREN
-      if ( ( *alt )->isRunning() )
-        ( *alt )->terminate();
+      ( *alt )->cancelAlert();
     }
+    //
+    // Aufräumen dem System/ der runtime überlassen :-)
+    //
     LGINFO( "MainDaemon::requestQuit...OK" );
     emit close();
   }
@@ -171,7 +172,12 @@ namespace radioalert
     static qint32 loopcounter = 0;
     qint16 timeDiff = 0;
     //
-    LGDEBUG( QString( "MainDaemon::slotZyclonTimer: <%1>" ).arg( loopcounter++, 8, 10, QChar( '0' ) ) );
+    //
+    // nur jedes zehnte mal reagieren
+    //
+    if ( ++loopcounter % 10 != 0 )
+      return;
+    LGDEBUG( QString( "MainDaemon::slotZyclonTimer: <%1>" ).arg( loopcounter, 8, 10, QChar( '0' ) ) );
     //
     // lies die Timer und stelle fest ob ein Alarm fällig ist
     // Referenz auf die Liste holen
@@ -220,16 +226,21 @@ namespace radioalert
         // den Alarm auf genau jetzt setzen (minus 8 Sekunden)
         //
         alrt.setAlertTime( QTime::currentTime().addSecs( -8 ) );
-        RadioAlertThread *newAlert = new RadioAlertThread( lg, alrt, avStDevices, this );
-        // in die Liste der Threads
-        activeThreads.append( newAlert );
-        // verbinde die Endemeldung des Thread mit dem Slot
-        connect( newAlert, &RadioAlertThread::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
-        // und die Selbstzerstörung einleiten, wenn Thread endet
-        connect( newAlert, &RadioAlertThread::finished, newAlert, &RadioAlertThread::deleteLater );
-        // Thread starten
-        newAlert->start();
-        newAlert->startTimer( 1000 );
+        try
+        {
+          SingleRadioAlert *newAlert = new SingleRadioAlert( lg, alrt, avStDevices, this );
+          // in die Liste der Threads
+          activeAlerts.append( newAlert );
+          // verbinde die Endemeldung des Thread mit dem Slot
+          connect( newAlert, &SingleRadioAlert::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
+          // Timer hier auch dran binden
+          connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
+          newAlert->start();
+        }
+        catch ( NoAvailibleSoundDeviceException ex )
+        {
+          LGWARN( "no availible devices for this alert!" );
+        }
       }
 #endif
       // ist ein datum gesetzt, und ist es heute?
@@ -266,6 +277,8 @@ namespace radioalert
         // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
         //
         LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
+        // TODO: implementieren
+        /*
         ali->setAlertIsBusy( true );
         RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, avStDevices, this );
         // in die Liste der Threads
@@ -277,6 +290,7 @@ namespace radioalert
         // Thread starten
         newAlert->start();
         newAlert->startTimer( 1000 );
+        */
       }
       else
       {
@@ -374,25 +388,26 @@ namespace radioalert
    * @brief MainDaemon::slotAlertFinished
    * @param theTread
    */
-  void MainDaemon::slotAlertFinished( RadioAlertThread *theTread )
+  void MainDaemon::slotAlertFinished( SingleRadioAlert *theAlert )
   {
     //
-    // der Thread beendet sich...
+    // der Alarm beendet sich...
     // den alarm wieder freigeben
     //
-    if ( appConfig->getAlertList().contains( theTread->getAlertName() ) )
+    if ( appConfig->getAlertList().contains( theAlert->getAlertName() ) )
     {
       //
       // setzte BUSY auf False
       //
-      ( appConfig->getAlertList() )[ theTread->getAlertName() ].setAlertIsBusy( false );
+      ( appConfig->getAlertList() )[ theAlert->getAlertName() ].setAlertIsBusy( false );
     }
     //
-    // aus der Liste entfernen!
+    // aus der Liste entfernen und freigeben!
     //
-    if ( activeThreads.contains( theTread ) )
+    theAlert->deleteLater();
+    if ( activeAlerts.contains( theAlert ) )
     {
-      activeThreads.removeOne( theTread );
+      activeAlerts.removeOne( theAlert );
     }
   }
 }  // namespace radioalert
