@@ -6,11 +6,11 @@
 
 namespace radioalert
 {
-  const QString AvailableDevices::hostName( "host" );
-  const QString AvailableDevices::deviceType( "type" );
-  const QString AvailableDevices::httpPort( "port" );
-  const QString AvailableDevices::wsPort( "wsport" );
-  const QString AvailableDevices::deviceName( "name" );
+  const QString AvailableDevices::hostName{"host"};
+  const QString AvailableDevices::deviceType{"type"};
+  const QString AvailableDevices::httpPort{"port"};
+  const QString AvailableDevices::wsPort{"wsport"};
+  const QString AvailableDevices::deviceName{"name"};
 
   AvailableDevices::AvailableDevices( void )
   {

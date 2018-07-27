@@ -5,7 +5,7 @@
 
 namespace radioalert
 {
-  const QString MainDaemon::version = QString( "%1.%2.%3" ).arg( VMAJOR ).arg( VMINOR ).arg( VPATCH );
+  const QString MainDaemon::version{QString( "%1.%2.%3" ).arg( VMAJOR ).arg( VMINOR ).arg( VPATCH )};
 
   /**
    * @brief MainDaemon::MainDaemon

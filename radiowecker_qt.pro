@@ -68,7 +68,8 @@ CONFIG(debug, debug|release) {
     message( LOCAL BUILD )
     LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
   }
-  LIBS                                 += -lsoundtouch_debug_qt
+  #LIBS                                 += -lsoundtouch_debug_qt
+  LIBS                                 += -lsoundtouch_qt
   DEFINES                              += DEBUG
 }
 

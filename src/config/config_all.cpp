@@ -4,21 +4,21 @@
 
 namespace radioalert
 {
-  const QString GlobalConfig::groupName( "global" );
-  const QString GlobalConfig::logFileKey( "logfile" );
-  const QString GlobalConfig::logToConsoleKey( "log_to_console" );
-  const QString GlobalConfig::serverPortKey( "server_port" );
-  const QString GlobalConfig::serverAddrKey( "server_addr" );
-  const QString GlobalConfig::timeZoneKey( "timezone" );
-  const QString GlobalConfig::raiseVolKey( "raise_vol" );
-  const QString GlobalConfig::networkTimeoutKey( "network_timeout" );
-  const QString GlobalConfig::autorefreshKey( "autorefresh" );
-  const QString GlobalConfig::guiExtraBottom1Key( "gui_extra_bottom1" );
-  const QString GlobalConfig::guiExtraBottom2Key( "gui_extra_bottom2" );
-  const QString GlobalConfig::loglevelKey( "loglevel" );
-  const QString GlobalConfig::guiHeaderKey( "gui_header" );
-  const QString GlobalConfig::devicesFileKey( "devices_file" );
-  const QString GlobalConfig::guiThemeKey( "gui_theme" );
+  const QString GlobalConfig::groupName{"global"};
+  const QString GlobalConfig::logFileKey{"logfile"};
+  const QString GlobalConfig::logToConsoleKey{"log_to_console"};
+  const QString GlobalConfig::serverPortKey{"server_port"};
+  const QString GlobalConfig::serverAddrKey{"server_addr"};
+  const QString GlobalConfig::timeZoneKey{"timezone"};
+  const QString GlobalConfig::raiseVolKey{"raise_vol"};
+  const QString GlobalConfig::networkTimeoutKey{"network_timeout"};
+  const QString GlobalConfig::autorefreshKey{"autorefresh"};
+  const QString GlobalConfig::guiExtraBottom1Key{"gui_extra_bottom1"};
+  const QString GlobalConfig::guiExtraBottom2Key{"gui_extra_bottom2"};
+  const QString GlobalConfig::loglevelKey{"loglevel"};
+  const QString GlobalConfig::guiHeaderKey{"gui_header"};
+  const QString GlobalConfig::devicesFileKey{"devices_file"};
+  const QString GlobalConfig::guiThemeKey{"gui_theme"};
 
   GlobalConfig::GlobalConfig( void )
       : serverPort( 26106 )

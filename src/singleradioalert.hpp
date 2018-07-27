@@ -3,6 +3,7 @@
 
 #include <qglobal.h>
 #include <QObject>
+#include <QTimer>
 #include <bsoundtouchdevice.hpp>
 #include <memory>
 #include "config/availabledevices.hpp"
@@ -10,22 +11,35 @@
 #include "global_config.hpp"
 #include "logging/logger.hpp"
 #include "utils/noavailiblesounddeviceexception.hpp"
+#include "xmlparser/httpresponse/httpnowplayingobject.hpp"
+#include "xmlparser/httpresponse/httpresultokobject.hpp"
+#include "xmlparser/httpresponse/httpvolumeobject.hpp"
+#include "xmlparser/wscallback/wserrorupdated.hpp"
+#include "xmlparser/wscallback/wsnowplayingupdate.hpp"
+#include "xmlparser/wscallback/wsnowselectionupdated.hpp"
+#include "xmlparser/wscallback/wsvolumeupdated.hpp"
 
 namespace radioalert
 {
+  using namespace bose_soundtoch_lib;
   //
-  // Lesbasrkeit vereinfachen
+  // Lesbarkeit vereinfachen
   //
-  constexpr qint32 RESPONSETIMEOUT = 20;
-  using SharedResponsePtr = std::shared_ptr< bose_soundtoch_lib::IResponseObject >;
+  constexpr qint32 RESPONSETIMEOUT = 20 * 1000;    //! Timeout in ms
+  constexpr qint8 MAXCONNECTTRYS = 5;              //! maximale Anzahl von Verbindungsversuchen für Websocket
+  static const QString PRESETPATTERN = "PRESET_";  //! wenn ein PRESET ausgewählt wurde
+  //
+  using SharedResponsePtr = std::shared_ptr< IResponseObject >;
+  using BoseDevice = BSoundTouchDevice;
   //
   enum class deviceStatus : quint8
   {
     NONE,
     STANDBY,
-    READY,
     BUFFERING,
     PLAYING,
+    INIT_GROUP,
+    READY,
     ERROR
   };
 
@@ -34,16 +48,22 @@ namespace radioalert
     Q_OBJECT
 
     private:
-    std::shared_ptr< Logger > lg;                                           //! der Logger
-    const SingleAlertConfig localAlertConfig;                               //! lokale kopie der Konfiguration
-    const StDevicesHashList avStDevices;                                    //! lokale kopie der verfügbaren Geräte
-    std::unique_ptr< bose_soundtoch_lib::BSoundTouchDevice > masterDevice;  //! das Soundtoch Masterdevice
-    StDevicesHashList realDevices;                                          //! devices, welceh angefordert und auch vorhanden sind
-    qint32 alertLoopCounter;                                                //! anzahl der timerdurchläufe zählen
-    deviceStatus masterDeviceStat;                                          //! wenn ich auf das Masterdevice warte
-    bool isActive;                                                          //! ist dieser alarm aktiv?
-    QString masterDeviceName;                                               //! Name des Master Device (kann auch das einzige sein)
-    qint16 alertDuration;                                                   //! zeit, die der alarm noch läuft
+    std::shared_ptr< Logger > lg;                //! der Logger
+    const SingleAlertConfig localAlertConfig;    //! lokale kopie der Konfiguration
+    const StDevicesHashList avStDevices;         //! lokale kopie der verfügbaren Geräte
+    std::unique_ptr< BoseDevice > masterDevice;  //! das Soundtoch Masterdevice
+    StDevicesHashList realDevices;               //! devices, welceh angefordert und auch vorhanden sind
+    qint32 alertLoopCounter;                     //! anzahl der timerdurchläufe zählen
+    deviceStatus masterDeviceStat;               //! wenn ich auf das Masterdevice warte
+    bool isActive;                               //! ist dieser alarm aktiv?
+    bool callBackWsConnected;                    //! zeigt ob die Websocketverbindung zum Gerät besteht
+    qint8 connectWsTrysCount;                    //! anzahl der Verbindungsversuche für Websocket
+    QString masterDeviceName;                    //! Name des Master Device (kann auch das einzige sein)
+    qint16 alertDuration;                        //! zeit, die der alarm noch läuft
+    QTimer waitForTimer;                         //! Timer zum awrten auf erfolg einer Aktion
+    int currentVolume;                           //! aktuelle Lautstärke des Gerätes
+    int oldVolume;                               //! beim Einschalten gefundene Lautstärke
+    QString lastError;                           //! kam ein Fehler vom Gerät, hier der letzte Fehler vorgehalten
 
     public:
     SingleRadioAlert( std::shared_ptr< Logger > logger, SingleAlertConfig &alert, StDevicesHashList &devices, QObject *parent );
@@ -54,20 +74,24 @@ namespace radioalert
     QString getAlertName( void );     //! welchen namen hat der alarm in der config
 
     private:
-    bool checkIfDevicesAvailible( void );                                            //! sind Geräte für diesen alarm verfügbar?
-    bool checkIfDeviceIsInStandby( bose_soundtoch_lib::BSoundTouchDevice *device );  //! Ist das Gerät im standby?
-    void computeVolumeMsg( SharedResponsePtr response );                             //! Lautstärke Nachricht verarbeiten
-    void computeNowPlayingMsg( SharedResponsePtr response );                         //! Now Playing Nachricht verarbeiten
+    bool checkIfDevicesAvailible( void );                               //! sind Geräte für diesen alarm verfügbar?
+    bool checkIfDeviceIsInStandby( BoseDevice *device );                //! Ist das Gerät im standby?
+    void connectCallbacksforDevice( void );                             //! verbinde die Callbacks mit dem Gerät
+    void computeStausMsg( SharedResponsePtr response );                 //! Bestätigung für eine GET Anforderung
+    void computeVolumeMsg( SharedResponsePtr response );                //! Lautstärke Nachricht verarbeiten
+    void computeNowPlayingMsg( SharedResponsePtr response );            //! Now Playing Nachricht verarbeiten
+    void switchMasterDeviceToSource( HttpNowPlayingObject *nPlayObj );  //! schalte das Gerät zur Quelle im aktuellen alarm
 
     signals:
     void sigAlertFinished( SingleRadioAlert *theAlert );  //! sende Signal wenn der Alarm regilär beendet wurde
     void sigAlertResultError( const QString &errMsg );    //! sende Signal mit Fehlertext ei Fehler
 
     public slots:
-    void slotOnZyclonTimer( void );
+    void slotOnZyclonTimer( void );  //! der zyklische Timer
 
     private slots:
-    void slotOnRequestAnswer( SharedResponsePtr response );
+    void slotOnRequestAnswer( SharedResponsePtr response );    //! wenn eine Antwort auf http request rein kommt
+    void slotOnNowPlayingUpdate( SharedResponsePtr respObj );  //! wenn der Spielstatus sich ändert...
   };
 }  // namespace radioalert
 #endif  // SINGLERADIOALERT_HPP

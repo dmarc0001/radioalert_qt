@@ -8,23 +8,22 @@
 
 namespace radioalert
 {
-  const QString AlertConfig::dateKey( "date" );
-  const QString AlertConfig::timeKey( "time" );
-  const QString AlertConfig::raiseVolKey( "raise_vol" );
-  const QString AlertConfig::volumeKey( "volume" );
-  const QString AlertConfig::devicesKey( "devices" );
-  const QString AlertConfig::sourceAccountKey( "source_account" );
-  const QString AlertConfig::noteKey( "note" );
-  const QString AlertConfig::alertEnableKey( "enable" );
-  const QString AlertConfig::sourceKey( "source" );
-  const QString AlertConfig::durationKey( "duration" );
-  const QString AlertConfig::typeKey( "type" );
-  const QString AlertConfig::daysKey( "days" );
-  const QString AlertConfig::locationKey( "location" );
-  const QRegExp AlertConfig::alertGroupToken( QString( "alert-\\d{2}" ) );
-  // const QString AlertConfig::alertTemplate( "alert-%1" );
-  const QString AlertConfig::dateFormatToken( "yyyy-MM-dd" );
-  const QString AlertConfig::timeFormatToken( "hh:mm" );
+  const QString AlertConfig::dateKey{"date"};
+  const QString AlertConfig::timeKey{"time"};
+  const QString AlertConfig::raiseVolKey{"raise_vol"};
+  const QString AlertConfig::volumeKey{"volume"};
+  const QString AlertConfig::devicesKey{"devices"};
+  const QString AlertConfig::sourceAccountKey{"source_account"};
+  const QString AlertConfig::noteKey{"note"};
+  const QString AlertConfig::alertEnableKey{"enable"};
+  const QString AlertConfig::sourceKey{"source"};
+  const QString AlertConfig::durationKey{"duration"};
+  const QString AlertConfig::typeKey{"type"};
+  const QString AlertConfig::daysKey{"days"};
+  const QString AlertConfig::locationKey{"location"};
+  const QRegExp AlertConfig::alertGroupToken{QString( "alert-\\d{2}" )};
+  const QString AlertConfig::dateFormatToken{"yyyy-MM-dd"};
+  const QString AlertConfig::timeFormatToken{"hh:mm"};
 
   AlertConfig::AlertConfig( void )
   {

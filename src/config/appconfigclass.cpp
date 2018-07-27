@@ -7,8 +7,8 @@
 
 namespace radioalert
 {
-  const QString AppConfigClass::constNoData( "-" );
-  const QString AppConfigClass::constAppGroupName( "application" );
+  const QString AppConfigClass::constNoData{"-"};
+  const QString AppConfigClass::constAppGroupName{"application"};
 
   /**
    * @brief LoggerClass::LoggerClass Der Konstruktor mit Name der Konfigdatei im Programmverzeichnis
