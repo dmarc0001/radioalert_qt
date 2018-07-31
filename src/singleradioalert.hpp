@@ -82,7 +82,6 @@ namespace radioalert
 
     private:
     bool checkIfDevicesAvailible( void );                               //! sind Geräte für diesen alarm verfügbar?
-    bool checkIfDeviceIsInStandby( BoseDevice *device );                //! Ist das Gerät im standby?
     void connectCallbacksforDevice( void );                             //! verbinde die Callbacks mit dem Gerät
     void computeStausMsg( SharedResponsePtr response );                 //! Bestätigung für eine GET Anforderung
     void computeVolumeMsg( SharedResponsePtr response );                //! Lautstärke Nachricht verarbeiten
