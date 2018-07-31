@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include <QObject>
+#include <QRegExp>
 #include <QtCore/QCommandLineOption>
 #include <QtCore/QCommandLineParser>
 #include <QtCore/QCoreApplication>
@@ -14,7 +15,7 @@ int main( int argc, char *argv[] )
 {
   QCoreApplication a( argc, argv );
   QCommandLineParser parser;
-  QString appName = QString( "%1.ini" ).arg( QCoreApplication::applicationName() );
+  QString appName = QCoreApplication::applicationName().remove( QRegExp( "_d$" ) ).append( ".ini" );
   QString configName;
 
   parser.addHelpOption();

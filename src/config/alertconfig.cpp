@@ -8,23 +8,22 @@
 
 namespace radioalert
 {
-  const QString AlertConfig::dateKey( "date" );
-  const QString AlertConfig::timeKey( "time" );
-  const QString AlertConfig::raiseVolKey( "raise_vol" );
-  const QString AlertConfig::volumeKey( "volume" );
-  const QString AlertConfig::devicesKey( "devices" );
-  const QString AlertConfig::sourceAccountKey( "source_account" );
-  const QString AlertConfig::noteKey( "note" );
-  const QString AlertConfig::alertEnableKey( "enable" );
-  const QString AlertConfig::sourceKey( "source" );
-  const QString AlertConfig::durationKey( "duration" );
-  const QString AlertConfig::typeKey( "type" );
-  const QString AlertConfig::daysKey( "days" );
-  const QString AlertConfig::locationKey( "location" );
-  const QRegExp AlertConfig::alertGroupToken( QString( "alert-\\d{2}" ) );
-  // const QString AlertConfig::alertTemplate( "alert-%1" );
-  const QString AlertConfig::dateFormatToken( "yyyy-MM-dd" );
-  const QString AlertConfig::timeFormatToken( "hh:mm" );
+  const QString AlertConfig::dateKey{"date"};
+  const QString AlertConfig::timeKey{"time"};
+  const QString AlertConfig::raiseVolKey{"raise_vol"};
+  const QString AlertConfig::volumeKey{"volume"};
+  const QString AlertConfig::devicesKey{"devices"};
+  const QString AlertConfig::sourceAccountKey{"source_account"};
+  const QString AlertConfig::noteKey{"note"};
+  const QString AlertConfig::alertEnableKey{"enable"};
+  const QString AlertConfig::sourceKey{"source"};
+  const QString AlertConfig::durationKey{"duration"};
+  const QString AlertConfig::typeKey{"type"};
+  const QString AlertConfig::daysKey{"days"};
+  const QString AlertConfig::locationKey{"location"};
+  const QRegExp AlertConfig::alertGroupToken{QString( "alert-\\d{2}" )};
+  const QString AlertConfig::dateFormatToken{"yyyy-MM-dd"};
+  const QString AlertConfig::timeFormatToken{"hh:mm"};
 
   AlertConfig::AlertConfig( void )
   {
@@ -33,6 +32,8 @@ namespace radioalert
   bool AlertConfig::loadSettings( QSettings &settings, RadioAlertList &alerts )
   {
     QString tempStr;
+    QStringList sList;
+    QVariantList vList;
     qDebug() << "";
     qDebug() << QLatin1String( "try to load alert settings..." );
     //
@@ -124,9 +125,14 @@ namespace radioalert
       //
       // Geräte
       //
-      tempStr = settings.value( devicesKey, QLatin1String( "" ) ).toString();
-      qDebug().nospace().noquote() << QLatin1String( "devices (name) for alert: <" ) << tempStr << QLatin1String( ">" );
-      currAlert.setAlertDevices( QStringList( tempStr.split( QLatin1String( "," ) ) ) );
+      sList.clear();
+      vList = settings.value( devicesKey, QLatin1String( "" ) ).toList();
+      for ( QVariantList::Iterator it = vList.begin(); it != vList.end(); it++ )
+      {
+        sList << ( *it ).toString();
+      }
+      qDebug().nospace().noquote() << QLatin1String( "devices (name) for alert: <" ) << sList.join( ',' ) << QLatin1String( ">" );
+      currAlert.setAlertDevices( sList );
       //
       // source account, falls vorhanden
       //
@@ -166,9 +172,15 @@ namespace radioalert
       //
       // tage, an denen er weckt. Leer ==> jeden Tag
       //
-      tempStr = settings.value( daysKey, QLatin1String( "" ) ).toString();
-      qDebug().nospace().noquote() << QLatin1String( "days to alert (empty if every day): <" ) << tempStr << QLatin1String( ">" );
-      currAlert.setAlertDays( QStringList( tempStr.split( QLatin1String( "," ) ) ) );
+      sList.clear();
+      vList = settings.value( daysKey, QLatin1String( "" ) ).toList();
+      for ( QVariantList::Iterator it = vList.begin(); it != vList.end(); it++ )
+      {
+        sList << ( *it ).toString();
+      }
+      qDebug().nospace().noquote() << QLatin1String( "days to alert (empty if every day): <" ) << sList.join( ',' )
+                                   << QLatin1String( ">" );
+      currAlert.setAlertDays( sList );
       //
       // location speichern
       //

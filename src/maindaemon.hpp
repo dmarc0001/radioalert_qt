@@ -18,13 +18,18 @@
 #include "config/availabledevices.hpp"
 #include "global_config.hpp"
 #include "logging/logger.hpp"
-#include "radioalertthread.hpp"
+#include "singleradioalert.hpp"
 #include "utils/configfilenotexistexception.hpp"
 
 namespace radioalert
 {
+  //
+  // lesbarkeit verbessern
+  //
+  using SingleRadioAlertList = QVector< SingleRadioAlert * >;
+
   //! Zeitintervall für checks ob eine alarmzeit erreicht wurde
-  static const int mainTimerDelay = 1000 * 10;
+  static const int mainTimerDelay = 1000;
   //! Zeitintervall für test ob die Konfiguration verändert wurde
   static const int checkConfigTime = 1000 * 45;
   //! Zeitinterval zum Einlesen der verfügbaren Geräte
@@ -48,7 +53,7 @@ namespace radioalert
     static const QString version;
     std::shared_ptr< Logger > lg;
     QDateTime lastModifiedConfig;
-    QVector< RadioAlertThread * > activeThreads;
+    SingleRadioAlertList activeAlerts;
     StDevicesHashList avStDevices;
 
     public:
@@ -69,7 +74,7 @@ namespace radioalert
     private slots:
     void slotZyclonTimer( void );
     void slotConfigZyclonTimer( void );
-    void slotAlertFinished( RadioAlertThread *theTread );
+    void slotAlertFinished( SingleRadioAlert *theAlert );
     void slotavailDevicesZyclonTimer( void );
 
     public slots:

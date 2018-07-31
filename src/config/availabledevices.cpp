@@ -6,10 +6,12 @@
 
 namespace radioalert
 {
-  const QString AvailableDevices::hostName( "host" );
-  const QString AvailableDevices::deviceType( "type" );
-  const QString AvailableDevices::hostPort( "port" );
-  const QString AvailableDevices::deviceName( "name" );
+  const QString AvailableDevices::hostName{"host"};
+  const QString AvailableDevices::deviceType{"type"};
+  const QString AvailableDevices::httpPort{"port"};
+  const QString AvailableDevices::wsPort{"wsport"};
+  const QString AvailableDevices::deviceName{"name"};
+  const QString AvailableDevices::deviceId{"id"};
 
   AvailableDevices::AvailableDevices( void )
   {
@@ -72,14 +74,26 @@ namespace radioalert
       qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << deviceType << QLatin1String( ": " )
                                    << stDevice.deviceTyype;
       //
-      // Host port erfragen
+      // Host http port erfragen
       //
-      stDevice.hostPort = static_cast< qint16 >( settings.value( hostPort, QLatin1String( "8090" ) ).toString().toInt() );
-      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << hostPort << QLatin1String( ": " )
-                                   << stDevice.hostPort;
+      stDevice.httpPort = static_cast< qint16 >( settings.value( httpPort, QLatin1String( "8090" ) ).toString().toInt() );
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << httpPort << QLatin1String( ": " )
+                                   << stDevice.httpPort;
+      //
+      // Host ws port erfragen
+      //
+      stDevice.wsPort = static_cast< qint16 >( settings.value( wsPort, QLatin1String( "8080" ) ).toString().toInt() );
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << wsPort << QLatin1String( ": " )
+                                   << stDevice.wsPort;
+      //
+      // Device Id erfragen
+      //
+      stDevice.deviceId = settings.value( deviceId, QLatin1String( "00000000" ) ).toString().trimmed();
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << deviceId << QLatin1String( ": " )
+                                   << stDevice.deviceId;
       //
       settings.endGroup();
-      stDevices.insert( stDevice.hostName, stDevice );
+      stDevices.insert( stDevice.deviceName, stDevice );
     }
     return ( true );
   }
