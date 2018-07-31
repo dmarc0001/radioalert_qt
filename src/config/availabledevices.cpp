@@ -11,6 +11,7 @@ namespace radioalert
   const QString AvailableDevices::httpPort{"port"};
   const QString AvailableDevices::wsPort{"wsport"};
   const QString AvailableDevices::deviceName{"name"};
+  const QString AvailableDevices::deviceId{"id"};
 
   AvailableDevices::AvailableDevices( void )
   {
@@ -84,6 +85,12 @@ namespace radioalert
       stDevice.wsPort = static_cast< qint16 >( settings.value( wsPort, QLatin1String( "8080" ) ).toString().toInt() );
       qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << wsPort << QLatin1String( ": " )
                                    << stDevice.wsPort;
+      //
+      // Device Id erfragen
+      //
+      stDevice.deviceId = settings.value( deviceId, QLatin1String( "00000000" ) ).toString().trimmed();
+      qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << deviceId << QLatin1String( ": " )
+                                   << stDevice.deviceId;
       //
       settings.endGroup();
       stDevices.insert( stDevice.deviceName, stDevice );

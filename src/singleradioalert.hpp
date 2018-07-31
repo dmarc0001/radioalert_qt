@@ -2,6 +2,7 @@
 #define SINGLERADIOALERT_HPP
 
 #include <qglobal.h>
+#include <QHash>
 #include <QObject>
 #include <QTimer>
 #include <bsoundtouchdevice.hpp>
@@ -27,6 +28,7 @@ namespace radioalert
   //
   constexpr qint32 RESPONSETIMEOUT = 20 * 1000;    //! Timeout in ms
   constexpr qint8 MAXCONNECTTRYS = 5;              //! maximale Anzahl von Verbindungsversuchen für Websocket
+  constexpr qint16 DIMMERTIMEVELUE = 160;          //! timer intervall zum dimmen der Lautstärke
   static const QString PRESETPATTERN = "PRESET_";  //! wenn ein PRESET ausgewählt wurde
   //
   using SharedResponsePtr = std::shared_ptr< IResponseObject >;
@@ -39,7 +41,9 @@ namespace radioalert
     BUFFERING,
     PLAYING,
     INIT_GROUP,
-    READY,
+    PLAY_ALERT,
+    ENDING_ALERT,
+    ALERT_FINISH,
     ERROR
   };
 
@@ -52,7 +56,9 @@ namespace radioalert
     const SingleAlertConfig localAlertConfig;    //! lokale kopie der Konfiguration
     const StDevicesHashList avStDevices;         //! lokale kopie der verfügbaren Geräte
     std::unique_ptr< BoseDevice > masterDevice;  //! das Soundtoch Masterdevice
+    SoundTouchDeviceData masterDeviceData;       //! config daten des master device
     StDevicesHashList realDevices;               //! devices, welceh angefordert und auch vorhanden sind
+    SoundTouchMemberList slaveList;              //! Liste der Sklaven, wenn vorhanden
     qint32 alertLoopCounter;                     //! anzahl der timerdurchläufe zählen
     deviceStatus masterDeviceStat;               //! wenn ich auf das Masterdevice warte
     bool isActive;                               //! ist dieser alarm aktiv?
@@ -62,6 +68,7 @@ namespace radioalert
     qint16 alertDuration;                        //! zeit, die der alarm noch läuft
     QTimer waitForTimer;                         //! Timer zum awrten auf erfolg einer Aktion
     int currentVolume;                           //! aktuelle Lautstärke des Gerätes
+    int sendVolume;                              //! zum gerät beim dimmen gesendete Lautstärke
     int oldVolume;                               //! beim Einschalten gefundene Lautstärke
     QString lastError;                           //! kam ein Fehler vom Gerät, hier der letzte Fehler vorgehalten
 

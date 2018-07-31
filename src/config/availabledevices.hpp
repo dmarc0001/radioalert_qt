@@ -23,6 +23,7 @@ namespace radioalert
     qint16 wsPort;
     QString deviceTyype;
     QString deviceName;
+    QString deviceId;
   };
 
   class AvailableDevices
@@ -33,6 +34,7 @@ namespace radioalert
     static const QString wsPort;      //! Port für Websocket
     static const QString deviceType;  //! Typenbezeichnung
     static const QString deviceName;  //! Menschenlesbarer Name (für Anzeigen)
+    static const QString deviceId;    //! ID(Mac) des Gerätes
     QMutex configLocker;              //! verhindert gleichzeitige verändernde zugriffe auf config
     StDevicesHashList stDevices;      //! Liste mit Geräten
 
