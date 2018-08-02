@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <bsoundtouchdevice.hpp>
 #include <memory>
+#include "abstract/asyncalertcommand.hpp"
 #include "config/availabledevices.hpp"
 #include "config/singlealertconfig.hpp"
 #include "global_config.hpp"
@@ -52,25 +53,26 @@ namespace radioalert
     Q_OBJECT
 
     private:
-    std::shared_ptr< Logger > lg;                //! der Logger
-    const SingleAlertConfig localAlertConfig;    //! lokale kopie der Konfiguration
-    const StDevicesHashList avStDevices;         //! lokale kopie der verfügbaren Geräte
-    std::unique_ptr< BoseDevice > masterDevice;  //! das Soundtoch Masterdevice
-    SoundTouchDeviceData masterDeviceData;       //! config daten des master device
-    StDevicesHashList realDevices;               //! devices, welceh angefordert und auch vorhanden sind
-    SoundTouchMemberList slaveList;              //! Liste der Sklaven, wenn vorhanden
-    qint32 alertLoopCounter;                     //! anzahl der timerdurchläufe zählen
-    deviceStatus masterDeviceStat;               //! wenn ich auf das Masterdevice warte
-    bool isActive;                               //! ist dieser alarm aktiv?
-    bool callBackWsConnected;                    //! zeigt ob die Websocketverbindung zum Gerät besteht
-    qint8 connectWsTrysCount;                    //! anzahl der Verbindungsversuche für Websocket
-    QString masterDeviceName;                    //! Name des Master Device (kann auch das einzige sein)
-    qint16 alertDuration;                        //! zeit, die der alarm noch läuft
-    QTimer waitForTimer;                         //! Timer zum awrten auf erfolg einer Aktion
-    int currentVolume;                           //! aktuelle Lautstärke des Gerätes
-    int sendVolume;                              //! zum gerät beim dimmen gesendete Lautstärke
-    int oldVolume;                               //! beim Einschalten gefundene Lautstärke
-    QString lastError;                           //! kam ein Fehler vom Gerät, hier der letzte Fehler vorgehalten
+    std::shared_ptr< Logger > lg;                       //! der Logger
+    const SingleAlertConfig localAlertConfig;           //! lokale kopie der Konfiguration
+    const StDevicesHashList avStDevices;                //! lokale kopie der verfügbaren Geräte
+    std::unique_ptr< BoseDevice > masterDevice;         //! das Soundtoch Masterdevice
+    std::unique_ptr< AsyncAlertCommand > alertCommand;  //! Modul führt Kommandos aus und meldet Erfolg
+    SoundTouchDeviceData masterDeviceData;              //! config daten des master device
+    StDevicesHashList realDevices;                      //! devices, welceh angefordert und auch vorhanden sind
+    SoundTouchMemberList slaveList;                     //! Liste der Sklaven, wenn vorhanden
+    qint32 alertLoopCounter;                            //! anzahl der timerdurchläufe zählen
+    deviceStatus masterDeviceStat;                      //! wenn ich auf das Masterdevice warte
+    bool isActive;                                      //! ist dieser alarm aktiv?
+    bool callBackWsConnected;                           //! zeigt ob die Websocketverbindung zum Gerät besteht
+    qint8 connectWsTrysCount;                           //! anzahl der Verbindungsversuche für Websocket
+    QString masterDeviceName;                           //! Name des Master Device (kann auch das einzige sein)
+    qint16 alertDuration;                               //! zeit, die der alarm noch läuft
+    QTimer waitForTimer;                                //! Timer zum awrten auf erfolg einer Aktion
+    int currentVolume;                                  //! aktuelle Lautstärke des Gerätes
+    int sendVolume;                                     //! zum gerät beim dimmen gesendete Lautstärke
+    int oldVolume;                                      //! beim Einschalten gefundene Lautstärke
+    QString lastError;                                  //! kam ein Fehler vom Gerät, hier der letzte Fehler vorgehalten
 
     public:
     SingleRadioAlert( std::shared_ptr< Logger > logger, SingleAlertConfig &alert, StDevicesHashList &devices, QObject *parent );
@@ -81,12 +83,14 @@ namespace radioalert
     QString getAlertName( void );     //! welchen namen hat der alarm in der config
 
     private:
-    bool checkIfDevicesAvailible( void );                               //! sind Geräte für diesen alarm verfügbar?
-    void connectCallbacksforDevice( void );                             //! verbinde die Callbacks mit dem Gerät
-    void computeStausMsg( SharedResponsePtr response );                 //! Bestätigung für eine GET Anforderung
-    void computeVolumeMsg( SharedResponsePtr response );                //! Lautstärke Nachricht verarbeiten
-    void computeNowPlayingMsg( SharedResponsePtr response );            //! Now Playing Nachricht verarbeiten
-    void switchMasterDeviceToSource( HttpNowPlayingObject *nPlayObj );  //! schalte das Gerät zur Quelle im aktuellen alarm
+    bool checkIfDevicesAvailible( void );                     //! sind Geräte für diesen alarm verfügbar?
+    void connectCallbacksforDevice( void );                   //! verbinde die Callbacks mit dem Gerät
+    void switchMasterDeviceToSource( void );                  //! schalte das Gerät zur Quelle im aktuellen alarm
+    void connectDeviceSlaves( void );                         //! verbinde Sklaven wenn vorhanden
+    void computeVolumeForDevice( void );                      //! Lautstärke einstellen (dimmen oder einfach ein)
+    void computeStausMsg( SharedResponsePtr response );       //! Bestätigung für eine GET Anforderung
+    void computeVolumeMsg( SharedResponsePtr response );      //! Lautstärke Nachricht verarbeiten
+    void computeNowPlayingMsg( SharedResponsePtr response );  //! Now Playing Nachricht verarbeiten
 
     signals:
     void sigAlertFinished( SingleRadioAlert *theAlert );  //! sende Signal wenn der Alarm regilär beendet wurde
