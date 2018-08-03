@@ -33,7 +33,7 @@ namespace radioalert
   {
     QString tempStr;
     QStringList sList;
-    QVariantList vList;
+    QStringList vList;
     qDebug() << "";
     qDebug() << QLatin1String( "try to load alert settings..." );
     //
@@ -126,10 +126,17 @@ namespace radioalert
       // Geräte
       //
       sList.clear();
-      vList = settings.value( devicesKey, QLatin1String( "" ) ).toList();
-      for ( QVariantList::Iterator it = vList.begin(); it != vList.end(); it++ )
+      if ( settings.value( devicesKey, QLatin1String( "" ) ).canConvert( QMetaType::QStringList ) )
       {
-        sList << ( *it ).toString();
+        vList = settings.value( devicesKey, QLatin1String( "" ) ).toStringList();
+        for ( QStringList::Iterator it = vList.begin(); it != vList.end(); it++ )
+        {
+          sList << ( *it );
+        }
+      }
+      else
+      {
+        sList << settings.value( devicesKey, QLatin1String( "" ) ).toString();
       }
       qDebug().nospace().noquote() << QLatin1String( "devices (name) for alert: <" ) << sList.join( ',' ) << QLatin1String( ">" );
       currAlert.setAlertDevices( sList );
@@ -173,10 +180,17 @@ namespace radioalert
       // tage, an denen er weckt. Leer ==> jeden Tag
       //
       sList.clear();
-      vList = settings.value( daysKey, QLatin1String( "" ) ).toList();
-      for ( QVariantList::Iterator it = vList.begin(); it != vList.end(); it++ )
+      if ( settings.value( daysKey, QLatin1String( "" ) ).canConvert( QMetaType::QStringList ) )
       {
-        sList << ( *it ).toString();
+        vList = settings.value( daysKey, QLatin1String( "" ) ).toStringList();
+        for ( QStringList::Iterator it = vList.begin(); it != vList.end(); it++ )
+        {
+          sList << ( *it );
+        }
+      }
+      else
+      {
+        sList << settings.value( daysKey, QLatin1String( "" ) ).toString();
       }
       qDebug().nospace().noquote() << QLatin1String( "days to alert (empty if every day): <" ) << sList.join( ',' )
                                    << QLatin1String( ">" );

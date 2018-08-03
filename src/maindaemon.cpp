@@ -113,7 +113,7 @@ namespace radioalert
     {
       LGINFO( "MainDaemon::requestQuit: kill thread..." );
       // signalisiere sein baldiges Ende
-      ( *alt )->cancelAlert();
+      ( *alt )->cancelAlert( "main daemon killed!" );
     }
     //
     // Aufräumen dem System/ der runtime überlassen :-)

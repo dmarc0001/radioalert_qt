@@ -38,13 +38,15 @@ namespace radioalert
   enum class deviceStatus : quint8
   {
     NONE,
-    STANDBY,
-    BUFFERING,
-    PLAYING,
-    INIT_GROUP,
-    PLAY_ALERT,
-    ENDING_ALERT,
-    ALERT_FINISH,
+    DEVICE_STANDBY,
+    DEVICE_BUFFERING,
+    DEVICE_PLAYING,
+    DEVICE_INIT_GROUP,
+    ALERT_IS_PLAYING,
+    ALERT_IS_ENDING,
+    ALERT_IS_FINISHED,
+    DEVICE_IS_SWITCH_OFF,
+    ALERT_IS_ENDET,
     ERROR
   };
 
@@ -84,9 +86,11 @@ namespace radioalert
 
     private:
     bool checkIfDevicesAvailible( void );                     //! sind Geräte für diesen alarm verfügbar?
+    void getDeviceStartVolume( void );                        //! gib die eingestellte Lautstärke zurück, warte auf Ergebnis
     void connectCallbacksforDevice( void );                   //! verbinde die Callbacks mit dem Gerät
     void switchMasterDeviceToSource( void );                  //! schalte das Gerät zur Quelle im aktuellen alarm
     void connectDeviceSlaves( void );                         //! verbinde Sklaven wenn vorhanden
+    void switchDeviceOff( void );                             //! schalte das Gerät AUS
     void computeVolumeForDevice( void );                      //! Lautstärke einstellen (dimmen oder einfach ein)
     void computeStausMsg( SharedResponsePtr response );       //! Bestätigung für eine GET Anforderung
     void computeVolumeMsg( SharedResponsePtr response );      //! Lautstärke Nachricht verarbeiten
