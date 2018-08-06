@@ -34,8 +34,8 @@ namespace radioalert
     void switchPowerOn( BoseDevice *masterDevice );                               //! Schalte das Gerät AN
 
     private:
-    void switchPowerTo( bool isOn, BoseDevice *masterDevice );   //! schalte das Gerät zum Status isOn
-    void togglePowerKey( bool isOn, BoseDevice *masterDevice );  //! klöppel mit der POWER Taste
+    void switchPowerTo( bool toOn, BoseDevice *masterDevice );   //! schalte das Gerät zum Status isOn
+    void togglePowerKey( bool toOn, BoseDevice *masterDevice );  //! klöppel mit der POWER Taste
 
     signals:
     void sigDeviceIsPoweredON();                          //! callback, Gerät ist an

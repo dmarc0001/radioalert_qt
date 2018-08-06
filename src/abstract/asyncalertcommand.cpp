@@ -144,7 +144,7 @@ namespace radioalert
     switchPowerTo( true, masterDevice );
   }
 
-  void AsyncAlertCommand::switchPowerTo( bool isOn, BoseDevice *masterDevice )
+  void AsyncAlertCommand::switchPowerTo( bool toOn, BoseDevice *masterDevice )
   {
     //
     // Schritt 1 feststelen welcher Zustand aktuell ist
@@ -171,7 +171,7 @@ namespace radioalert
           // ich habe STANDBY
           //
           LGDEBUG( "AsyncAlertCommand::switchPowerTo: device is in state STANDBY..." );
-          if ( !isOn )
+          if ( !toOn )
           {
             // der gewünschte zustand ist schon errreicht
             emit sigDeviceIsPoweredOFF();
@@ -185,7 +185,7 @@ namespace radioalert
           // ich hab PLAY, PAUSE oder STOP
           //
           LGDEBUG( "AsyncAlertCommand::switchPowerTo: device is not state STANDBY..." );
-          if ( isOn )
+          if ( toOn )
           {
             // der gewünschte Status ist schon da
             emit sigDeviceIsPoweredON();
@@ -197,7 +197,7 @@ namespace radioalert
         // nicht der gewünschte status empfangen...
         // Gerät schalten und prüfen
         //
-        togglePowerKey( isOn, masterDevice );
+        togglePowerKey( toOn, masterDevice );
       }
     } );
     //
@@ -207,12 +207,14 @@ namespace radioalert
     masterDevice->getNowPlaying();
   }
 
-  void AsyncAlertCommand::togglePowerKey( bool isOn, BoseDevice *masterDevice )
+  void AsyncAlertCommand::togglePowerKey( bool toOn, BoseDevice *masterDevice )
   {
+    bool shouldSwitchTo = toOn;
     //
     // Schritt 02
     // wenn dann ein/aus geschaktet werden muss, dann hier
     //
+    LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: device switch power %1..." ).arg( shouldSwitchTo ) );
     //
     // conn ist ein Zeiger auf eine Verbindung
     // und wird dann meiner Verbindung zugewiesen (für disconnect)
@@ -229,30 +231,60 @@ namespace radioalert
       if ( response->getResultType() == ResultobjectType::R_NOW_PLAYING )
       {
         HttpNowPlayingObject *nPlayObj = static_cast< HttpNowPlayingObject * >( response.get() );
-        disconnect( *conn );
         if ( ( nPlayObj->getSource() ).contains( QLatin1String( "STANDBY" ) ) )
         {
           // ich habe STANDBY
-          LGDEBUG( "AsyncAlertCommand::checkIfDeviceInStandby: device is in state STANDBY..." );
-          if ( !isOn )
+          LGDEBUG( "AsyncAlertCommand::togglePowerKey: device is in state STANDBY..." );
+          // wenn das nicht das gewünschte Ergebnis war
+          if ( !shouldSwitchTo )
+          {
+            QThread::yieldCurrentThread();
+            QThread::msleep( 2000 );
+            LGDEBUG( "AsyncAlertCommand::togglePowerKey: ask again for now playing..." );
+            masterDevice->getNowPlaying();
+          }
+          else
+          {
             emit sigDeviceIsPoweredOFF();
+            disconnect( *conn );
+          }
         }
         else
         {
-          if ( isOn )
+          LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: device playing source %1..." ).arg( nPlayObj->getSource() ) );
+          // wenn das nicht das gewünschte Ergebnis war
+          if ( shouldSwitchTo )
+          {
+            QThread::yieldCurrentThread();
+            QThread::msleep( 2000 );
+            LGDEBUG( "AsyncAlertCommand::togglePowerKey: ask again for now playing..." );
+            masterDevice->getNowPlaying();
+          }
+          else
+          {
             emit sigDeviceIsPoweredON();
+            disconnect( *conn );
+          }
         }
       }
     } );
-
     //
     // Schalten!
     //
-    LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: now switch device power %1" ).append( isOn ) );
+    LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: now switch device power %1" ).arg( shouldSwitchTo ) );
     // toggel key ohne callback
     // TODO: auch überwachen?
+    for ( int cnt = 0; cnt < 100; cnt++ )
+    {
+      QThread::yieldCurrentThread();
+      QThread::msleep( 10 );
+    }
     masterDevice->setKey( BoseDevice::bose_key::KEY_POWER, BoseDevice::bose_keystate::KEY_TOGGLE );
-    QThread::msleep( 300 );
+    for ( int cnt = 0; cnt < 250; cnt++ )
+    {
+      QThread::yieldCurrentThread();
+      QThread::msleep( 10 );
+    }
     //
     // und nun nachfragen!
     //
