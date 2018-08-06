@@ -123,7 +123,7 @@ namespace radioalert
           //
           // jetz nur noch ausschalten
           //
-          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: alert regulay endet" );
+          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: alert regulay ending..." );
           switchDeviceOff();
           return;
         }
@@ -133,6 +133,7 @@ namespace radioalert
           //
           // warten auf Abschalten
           //
+          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: wait for switch off..." );
         }  // ende ALERT_SWITCH_OFF
         else if ( masterDeviceStat == deviceStatus::ALERT_IS_ENDET )
         {
