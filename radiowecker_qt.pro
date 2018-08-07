@@ -88,7 +88,8 @@ SOURCES += \
     src/logging/logger.cpp \
     src/utils/noavailiblesounddeviceexception.cpp \
     src/singleradioalert.cpp \
-    src/abstract/asyncalertcommand.cpp
+    src/abstract/asyncalertcommand.cpp \
+    src/udpcontrolprocess.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
@@ -104,7 +105,8 @@ HEADERS += \
     src/logging/logger.hpp \
     src/utils/noavailiblesounddeviceexception.hpp \
     src/singleradioalert.hpp \
-    src/abstract/asyncalertcommand.hpp
+    src/abstract/asyncalertcommand.hpp \
+    src/udpcontrolprocess.hpp
 
 DISTFILES += \
     alert_daemon.ini \
