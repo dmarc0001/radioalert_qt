@@ -13,13 +13,8 @@
 #include "global_config.hpp"
 #include "logging/logger.hpp"
 #include "utils/noavailiblesounddeviceexception.hpp"
-#include "xmlparser/httpresponse/httpnowplayingobject.hpp"
-#include "xmlparser/httpresponse/httpresultokobject.hpp"
-#include "xmlparser/httpresponse/httpvolumeobject.hpp"
 #include "xmlparser/wscallback/wserrorupdated.hpp"
-#include "xmlparser/wscallback/wsnowplayingupdate.hpp"
 #include "xmlparser/wscallback/wsnowselectionupdated.hpp"
-#include "xmlparser/wscallback/wsvolumeupdated.hpp"
 
 namespace radioalert
 {
@@ -29,7 +24,7 @@ namespace radioalert
   //
   constexpr qint32 RESPONSETIMEOUT = 20 * 1000;    //! Timeout in ms
   constexpr qint8 MAXCONNECTTRYS = 5;              //! maximale Anzahl von Verbindungsversuchen für Websocket
-  constexpr qint16 DIMMERTIMEVELUE = 160;          //! timer intervall zum dimmen der Lautstärke
+  constexpr qint16 DIMMERTIMEVELUE = 200;          //! timer intervall zum dimmen der Lautstärke
   static const QString PRESETPATTERN = "PRESET_";  //! wenn ein PRESET ausgewählt wurde
   //
   using SharedResponsePtr = std::shared_ptr< IResponseObject >;
@@ -74,6 +69,7 @@ namespace radioalert
     int currentVolume;                                  //! aktuelle Lautstärke des Gerätes
     int sendVolume;                                     //! zum gerät beim dimmen gesendete Lautstärke
     int oldVolume;                                      //! beim Einschalten gefundene Lautstärke
+    bool isUserVolumeAction;                            //! hat der Benutzer von aussen eingegriffen?
     QString lastError;                                  //! kam ein Fehler vom Gerät, hier der letzte Fehler vorgehalten
 
     public:
@@ -88,6 +84,7 @@ namespace radioalert
     bool checkIfDevicesAvailible( void );                     //! sind Geräte für diesen alarm verfügbar?
     void getDeviceStartVolume( void );                        //! gib die eingestellte Lautstärke zurück, warte auf Ergebnis
     void connectCallbacksforDevice( void );                   //! verbinde die Callbacks mit dem Gerät
+    void disconnectCallbacksforDevice( void );                //! trenne die Callbacks vom Gerät
     void switchMasterDeviceToSource( void );                  //! schalte das Gerät zur Quelle im aktuellen alarm
     void connectDeviceSlaves( void );                         //! verbinde Sklaven wenn vorhanden
     void switchDeviceOff( void );                             //! schalte das Gerät AUS

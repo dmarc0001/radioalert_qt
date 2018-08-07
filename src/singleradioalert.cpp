@@ -27,6 +27,7 @@ namespace radioalert
       , callBackWsConnected( false )
       , connectWsTrysCount( 0 )
       , oldVolume( -1 )
+      , isUserVolumeAction( false )
   {
     LGINFO( QString( "start radio alert %1 at %2" )
                 .arg( localAlertConfig.getAlertName() )
@@ -87,7 +88,7 @@ namespace radioalert
         //
         if ( masterDeviceStat == deviceStatus::ALERT_IS_PLAYING )
         {
-          if ( localAlertConfig.getAlertRaiseVol() && isActive )
+          if ( localAlertConfig.getAlertRaiseVol() && isActive && !isUserVolumeAction )
           {
             //
             // ok sanft ausdimmen, Kennzeichne das mit ENDING_ALERT
@@ -96,8 +97,8 @@ namespace radioalert
             waitForTimer.setSingleShot( false );
             sendVolume = currentVolume;
             connect( &waitForTimer, &QTimer::timeout, [=]() {
-              // runterdimmen
-              masterDevice->setVolume( sendVolume-- );
+              // runterdimmen ohne callbackkontrolle
+              masterDevice->setVolume( --sendVolume );
               if ( sendVolume <= 0 )
               {
                 disconnect( &( this->waitForTimer ), 0, 0, 0 );
@@ -137,7 +138,8 @@ namespace radioalert
         }  // ende ALERT_SWITCH_OFF
         else if ( masterDeviceStat == deviceStatus::ALERT_IS_ENDET )
         {
-          masterDevice->setVolume( oldVolume );
+          sendVolume = oldVolume;
+          masterDevice->setVolume( sendVolume );
           isActive = false;
           disconnect( masterDevice.get(), 0, 0, 0 );
           emit sigAlertFinished( this );
@@ -204,7 +206,7 @@ namespace radioalert
         // wird über Callback dann ausgelesen, asyncron
         //
         this->masterDevice->getVolume();
-        // zu Schritt 2
+        // zu Schritt 02
         LGDEBUG( "SingleRadioAlert::start: device is STANDBY, go to set volume" );
         this->getDeviceStartVolume();
       }
@@ -229,7 +231,7 @@ namespace radioalert
   void SingleRadioAlert::getDeviceStartVolume( void )
   {
     //
-    // Schritt 2
+    // Schritt 02
     // Lautstärke initial erfragen
     // wenn das nicht innerhalb der TIMEOUT zeit passiert oder das Gerät
     // etwas abspielt, vergessen wir das...
@@ -253,7 +255,7 @@ namespace radioalert
       disconnect( &( this->waitForTimer ), 0, 0, 0 );
       this->waitForTimer.stop();
       //
-      // weiter zu Schritt 3
+      // weiter zu Schritt 03
       //
       this->masterDeviceStat = deviceStatus::DEVICE_STANDBY;
       LGDEBUG( "SingleRadioAlert::getDeviceStartVolume: set volume OK, now switch source on device..." );
@@ -281,14 +283,15 @@ namespace radioalert
     //
     // erst mal auf LEISE (asyncron)
     //
-    masterDevice->setVolume( 0 );
+    sendVolume = 0;
+    masterDevice->setVolume( sendVolume );
     //
-    // 03:
+    // Schritt 03:
     // Radio einschalten
     // TODO: gilt nur für PRESETS -> Anpassung erforderlich wenn erweitert
     // warte bis das Gerät eingeschaltet ist und BUFFERING oder PLAY_STATE gemeldet wird
     // während der Status noch STANDBY ist
-    // dann weiter mit 03a (warten währen buffering) oder 04 (playstatus)
+    // dann weiter mit 04 (warten während buffering bis status play)
     //
     auto conn = std::make_shared< QMetaObject::Connection >();
     *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceIsSwitchedToSource, [=]( bool isSwitched ) {
@@ -301,7 +304,7 @@ namespace radioalert
         disconnect( &( this->waitForTimer ), 0, 0, 0 );
         this->waitForTimer.stop();
         //
-        // zu Schritt 5 , Sklaven verbinden
+        // zu Schritt 04 , Sklaven verbinden
         //
         masterDeviceStat = deviceStatus::DEVICE_PLAYING;
         this->connectDeviceSlaves();
@@ -331,7 +334,7 @@ namespace radioalert
   void SingleRadioAlert::connectDeviceSlaves( void )
   {
     //
-    // Schritt 05
+    // Schritt 04
     // verbinde Sklaven, wenn vorhanden
     //
     if ( realDevices.count() > 0 )
@@ -339,7 +342,7 @@ namespace radioalert
       masterDeviceStat = deviceStatus::DEVICE_INIT_GROUP;
       LGDEBUG( "SingleRadioAlert::connectDeviceSlaves: build an zone for play..." );
       //
-      // versuche 5a, Gruppenbildung...
+      // versuche 04a, Gruppenbildung...
       // Gruppe bilden
       //
       slaveList.clear();
@@ -357,7 +360,7 @@ namespace radioalert
     else
     {
       //
-      // Gehe zu Schritt 6, dimme oder stelle Lautstärke auf Konfigurierten Wert
+      // Gehe zu Schritt 05, dimme oder stelle Lautstärke auf Konfigurierten Wert
       //
       computeVolumeForDevice();
     }
@@ -366,34 +369,13 @@ namespace radioalert
   void SingleRadioAlert::computeVolumeForDevice( void )
   {
     //
-    // Schritt 6
-    // das Gerät spielt die Source, jeztt Lautstärke einstellen
+    // Schritt 05
+    // das Gerät spielt die Source, jetzt Lautstärke einstellen
     //
     masterDeviceStat = deviceStatus::ALERT_IS_PLAYING;
     //#####################################################################
     // ab hier ist der Alarm im Gange
     //#####################################################################
-    if ( localAlertConfig.getAlertRaiseVol() )
-    {
-      LGDEBUG( "raise volume: started!" );
-      waitForTimer.setSingleShot( false );
-      sendVolume = 0;
-      connect( &waitForTimer, &QTimer::timeout, [=]() {
-        // Lambda zum hochdimmen
-        this->masterDevice->setVolume( sendVolume++ );
-        if ( sendVolume >= localAlertConfig.getAlertVolume() )
-        {
-          disconnect( &( this->waitForTimer ), 0, 0, 0 );
-          LGDEBUG( "raise volume: reached!" );
-          this->waitForTimer.stop();
-        }
-      } );
-      waitForTimer.start( DIMMERTIMEVELUE );
-    }
-    else
-    {
-      masterDevice->setVolume( localAlertConfig.getAlertVolume() );
-    }
     //
     // Callbacks einrichten, Websocket verbinden
     //
@@ -401,7 +383,44 @@ namespace radioalert
     connectCallbacksforDevice();
     LGDEBUG( "SingleRadioAlert::computeVolumeForDevice: connect ws callbacks...OK" );
     //
-    // Ab hier läuft der Alarm
+    if ( !isUserVolumeAction )
+    {
+      //
+      // der User hat eingegriffen, also keine Lautstärkeaktion mehr vom Programm
+      // sollte eingeltlich hier noch nicht gehen
+      //
+      if ( localAlertConfig.getAlertRaiseVol() )
+      {
+        LGDEBUG( "raise volume: started!" );
+        waitForTimer.setSingleShot( false );
+        sendVolume = 0;
+        this->masterDevice->setVolume( ++sendVolume );
+        //
+        // Missbrauche den Timer zum Dimmen...
+        //
+        connect( &waitForTimer, &QTimer::timeout, [=]() {
+          if ( sendVolume != currentVolume )
+            return;
+          // Lambda zum hochdimmen
+          this->masterDevice->setVolume( ++sendVolume );
+          if ( sendVolume >= localAlertConfig.getAlertVolume() )
+          {
+            disconnect( &( this->waitForTimer ), 0, 0, 0 );
+            LGDEBUG( "raise volume: reached!" );
+            this->waitForTimer.stop();
+            this->disconnectCallbacksforDevice();
+          }
+        } );
+        waitForTimer.start( DIMMERTIMEVELUE );
+      }
+      else
+      {
+        sendVolume = localAlertConfig.getAlertVolume();
+        masterDevice->setVolume( sendVolume );
+      }
+    }
+    //
+    // ###### Ab hier läuft der Alarm #####
     //
   }
 
@@ -529,6 +548,7 @@ namespace radioalert
     // besteht eine Verbindung, Marker setzen
     connect( masterDevice.get(), &BoseDevice::sigOnWSConnected, [=]() {
       callBackWsConnected = true;
+      connectWsTrysCount = 0;  // zurücksetzten der Fehlversuche...
       LGDEBUG( "SingleRadioAlert::connectCallbacksforDevice: device callback estabished..." );
     } );
     // geht Verbindung verloren, neu versuchen
@@ -536,12 +556,8 @@ namespace radioalert
       callBackWsConnected = false;
       LGDEBUG( "SingleRadioAlert::connectCallbacksforDevice: device callback connection lost..." );
       // Signale wieder trennen (ergänzen, wenn mehr verbunden werden)
-      disconnect( masterDevice.get(), &BoseDevice::sigOnWSConnected, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnWSDisConnected, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnPresetSelectionUpdated, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnErrorUpdated, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnNowPlayingUpdated, 0, 0 );
+      this->disconnectCallbacksforDevice();
+      // neu verbinden!
       this->connectCallbacksforDevice();
     } );
     // Lautstärke Callback
@@ -549,9 +565,19 @@ namespace radioalert
       WsVolumeUpdated *volObj = static_cast< WsVolumeUpdated * >( respObj.get() );
       currentVolume = volObj->getActualVolume();
       if ( oldVolume == -1 )
+      {
         oldVolume = currentVolume;
-      LGDEBUG( QString( "SingleRadioAlert::connectCallbacksforDevice: volume callback. volume: %1" )
-                   .arg( currentVolume, 3, 10, QChar( '0' ) ) );
+        isUserVolumeAction = false;
+      }
+      if ( currentVolume != sendVolume )
+      {
+        isUserVolumeAction = true;
+        disconnect( &( this->waitForTimer ), 0, 0, 0 );
+        LGINFO( "user has changed the volume, not more touching volume via this alert..." );
+        LGDEBUG( QString( "current volume <%1>, sendVolume <%2>..." ).arg( currentVolume ).arg( sendVolume ) );
+        this->waitForTimer.stop();
+        this->disconnectCallbacksforDevice();
+      }
     } );
     // Sender gewechselt
     connect( masterDevice.get(), &BoseDevice::sigOnPresetSelectionUpdated, [=]( SharedResponsePtr respObj ) {
@@ -575,6 +601,20 @@ namespace radioalert
     // device verbinden
     //
     masterDevice->connectWs();
+  }
+
+  /**
+   * @brief SingleRadioAlert::disconnectCallbacksforDevice
+   */
+  void SingleRadioAlert::disconnectCallbacksforDevice( void )
+  {
+    // Signale wieder trennen (ergänzen, wenn mehr verbunden werden)
+    disconnect( masterDevice.get(), &BoseDevice::sigOnWSConnected, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnWSDisConnected, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnPresetSelectionUpdated, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnErrorUpdated, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnNowPlayingUpdated, 0, 0 );
   }
 
   void SingleRadioAlert::slotOnRequestAnswer( SharedResponsePtr response )
