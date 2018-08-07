@@ -226,69 +226,77 @@ namespace radioalert
     *conn = connect( masterDevice, &BoseDevice::sigOnRequestAnswer, [=]( SharedResponsePtr response ) {
       //
       // Kurze Lambda Funktion reicht hier
-      // ich interessiere mich nur für eine Antort vom Typ R_NOW_PLAYING
+      //
+      bool isPowered = true;
+      //
+      // ich interessiere mich für eine Antort vom Typ R_NOW_PLAYING
+      // um zu testen ob das gerät aus geschaltet wurde
       //
       if ( response->getResultType() == ResultobjectType::R_NOW_PLAYING )
       {
         HttpNowPlayingObject *nPlayObj = static_cast< HttpNowPlayingObject * >( response.get() );
         if ( ( nPlayObj->getSource() ).contains( QLatin1String( "STANDBY" ) ) )
         {
+          isPowered = false;
           // ich habe STANDBY
           LGDEBUG( "AsyncAlertCommand::togglePowerKey: device is in state STANDBY..." );
-          // wenn das nicht das gewünschte Ergebnis war
-          if ( !shouldSwitchTo )
-          {
-            QThread::yieldCurrentThread();
-            QThread::msleep( 2000 );
-            LGDEBUG( "AsyncAlertCommand::togglePowerKey: ask again for now playing..." );
-            masterDevice->getNowPlaying();
-          }
-          else
-          {
-            emit sigDeviceIsPoweredOFF();
-            disconnect( *conn );
-          }
         }
         else
         {
+          isPowered = true;
           LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: device playing source %1..." ).arg( nPlayObj->getSource() ) );
-          // wenn das nicht das gewünschte Ergebnis war
-          if ( shouldSwitchTo )
-          {
-            QThread::yieldCurrentThread();
-            QThread::msleep( 2000 );
-            LGDEBUG( "AsyncAlertCommand::togglePowerKey: ask again for now playing..." );
-            masterDevice->getNowPlaying();
-          }
-          else
-          {
+        }
+        //
+        // wenn das das gewünschte Ergebnis war, Signal und schluss
+        //
+        if ( isPowered == shouldSwitchTo )
+        {
+          if ( isPowered )
             emit sigDeviceIsPoweredON();
-            disconnect( *conn );
-          }
+          else
+            emit sigDeviceIsPoweredOFF();
+          disconnect( *conn );
+          return;
+        }
+        //
+        // wenn das NICHT das gewünschte Ergebnis war
+        // dann erneut fragten (bis von ausserhalb der gesetzte Timeout zuschlägt)
+        //
+        QThread::yieldCurrentThread();
+        QThread::msleep( 1200 );
+        LGDEBUG( "AsyncAlertCommand::togglePowerKey: ask again for now playing..." );
+        masterDevice->getNowPlaying();
+      }
+      //
+      // ich interessiere mich auch für eine Antort vom Typ R_OK
+      //
+      else if ( response->getResultType() == ResultobjectType::R_OK )
+      {
+        //
+        // wenn die power taste gedrückt und gelöst wird
+        //
+        HttpResultOkObject *nResultObj = static_cast< HttpResultOkObject * >( response.get() );
+        LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: result response: %1" ).arg( nResultObj->getStatus() ) );
+        keyresponseCounter++;
+        if ( keyresponseCounter == 2 )
+        {
+          //
+          // und nun nachfragen ob die Kiste aus ist
+          //
+          LGDEBUG( "AsyncAlertCommand::checkIfDeviceInStandby: ask master device..." );
+          masterDevice->getNowPlaying();
         }
       }
     } );
     //
     // Schalten!
     //
+    keyresponseCounter = 0;
     LGDEBUG( QString( "AsyncAlertCommand::togglePowerKey: now switch device power %1" ).arg( shouldSwitchTo ) );
-    // toggel key ohne callback
-    // TODO: auch überwachen?
-    for ( int cnt = 0; cnt < 100; cnt++ )
-    {
-      QThread::yieldCurrentThread();
-      QThread::msleep( 10 );
-    }
+    //
+    // toggle key mit callback, dort wird dann now playing erfragt und geschaut
+    // ob das Gerät auch ausgeschaltet wurde
+    //
     masterDevice->setKey( BoseDevice::bose_key::KEY_POWER, BoseDevice::bose_keystate::KEY_TOGGLE );
-    for ( int cnt = 0; cnt < 250; cnt++ )
-    {
-      QThread::yieldCurrentThread();
-      QThread::msleep( 10 );
-    }
-    //
-    // und nun nachfragen!
-    //
-    LGDEBUG( "AsyncAlertCommand::checkIfDeviceInStandby: ask master device..." );
-    masterDevice->getNowPlaying();
   }
 }  // namespace radioalert

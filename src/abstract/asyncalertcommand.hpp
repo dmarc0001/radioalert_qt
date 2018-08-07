@@ -8,6 +8,7 @@
 #include <memory>
 #include "../logging/logger.hpp"
 #include "xmlparser/httpresponse/httpnowplayingobject.hpp"
+#include "xmlparser/httpresponse/httpresultokobject.hpp"
 #include "xmlparser/httpresponse/httpvolumeobject.hpp"
 #include "xmlparser/wscallback/wsnowplayingupdate.hpp"
 #include "xmlparser/wscallback/wsvolumeupdated.hpp"
@@ -22,7 +23,8 @@ namespace radioalert
   {
     Q_OBJECT
     private:
-    std::shared_ptr< Logger > lg;
+    std::shared_ptr< Logger > lg;  //! der Zeiger auf den Logger
+    qint8 keyresponseCounter;      //! zähle bei powerToggle mit, ob zwei mal OK kam
 
     public:
     explicit AsyncAlertCommand( std::shared_ptr< Logger > logger, QObject *parent = nullptr );
