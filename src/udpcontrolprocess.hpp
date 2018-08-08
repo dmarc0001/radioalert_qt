@@ -1,36 +1,36 @@
-#ifndef UDPCONTROLPROCESS_HPP
-#define UDPCONTROLPROCESS_HPP
-
-#include <qglobal.h>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QNetworkDatagram>
 #include <QObject>
 #include <QThread>
 #include <QUdpSocket>
 #include <memory>
-#include "global_config.hpp"
 #include "logging/logger.hpp"
 
 namespace radioalert
 {
-  class UdpControlProcess : public QThread
+  class UdpControlProcess : public QObject
   {
     Q_OBJECT
     private:
-    std::shared_ptr< Logger > lg;
-    std::shared_ptr< AppConfigClass > appConfig;
-    std::unique_ptr< QUdpSocket > udpSocket;
+    static const QString commandGet;
+    //
+    std::shared_ptr< Logger > lg;             //! der Logfer
+    std::shared_ptr< AppConfigClass > cf;     //! App Config
+    std::unique_ptr< QUdpSocket > udpSocket;  //! der Socket zum Empfangen
+    volatile bool isRunning;                  //! Marker für weiterlaufen
 
     public:
     explicit UdpControlProcess( std::shared_ptr< Logger > logger,
                                 std::shared_ptr< AppConfigClass > config,
                                 QObject *parent = nullptr );
-    void run( void ) override;
+    void init( void );
+    void requestQuit( void );  //! Fordere Ende an
+
+    private:
+    void slotReadPendingDatagrams( void );  //! empfängt Daten
 
     signals:
-    void sigReloadConfig( void );
-
-    private slots:
-    void slotRreadPendingDatagrams( void );
+    void closeUdpServer( void );
   };
 }  // namespace radioalert
-#endif  // UDPCONTROLPROCESS_HPP

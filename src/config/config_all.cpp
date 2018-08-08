@@ -68,7 +68,14 @@ namespace radioalert
     //
     // server Hostaddr
     //
-    serverAddr = QHostAddress( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString() );
+    if ( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString().trimmed().contains( QLatin1Literal( "localhost" ) ) )
+    {
+      serverAddr = QHostAddress::LocalHost;
+    }
+    else
+    {
+      serverAddr = QHostAddress( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString().trimmed() );
+    }
     qDebug().noquote().nospace() << QLatin1String( "server host addr: <" ) << serverAddr.toString() << QLatin1String( ">" );
     //
     // Time zone
