@@ -145,7 +145,7 @@ namespace radioalert
       //
       qDebug().nospace().noquote() << QLatin1String( "source account (if availible): <" )
                                    << settings.value( sourceAccountKey, QLatin1String( "" ) ).toString() << QLatin1String( ">" );
-      currAlert.setSourceAccount( settings.value( sourceAccountKey, QLatin1String( "" ) ).toString() );
+      currAlert.setAlertSourceAccount( settings.value( sourceAccountKey, QLatin1String( "" ) ).toString() );
       //
       // note (bemerkungen)
       //
@@ -277,9 +277,9 @@ namespace radioalert
       //
       // source account, falls vorhanden
       //
-      qDebug().nospace().noquote() << QLatin1String( "save source account (if availible): <" ) << ral->getSourceAccount()
+      qDebug().nospace().noquote() << QLatin1String( "save source account (if availible): <" ) << ral->getAlertSourceAccount()
                                    << QLatin1String( ">" );
-      settings.setValue( sourceAccountKey, ral->getSourceAccount() );
+      settings.setValue( sourceAccountKey, ral->getAlertSourceAccount() );
       //
       // note (bemerkungen)
       //

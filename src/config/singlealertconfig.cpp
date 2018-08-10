@@ -77,12 +77,12 @@ namespace radioalert
     alertDevices = value;
   }
 
-  QString SingleAlertConfig::getSourceAccount() const
+  QString SingleAlertConfig::getAlertSourceAccount() const
   {
     return sourceAccount;
   }
 
-  void SingleAlertConfig::setSourceAccount( const QString &value )
+  void SingleAlertConfig::setAlertSourceAccount( const QString &value )
   {
     sourceAccount = value;
   }

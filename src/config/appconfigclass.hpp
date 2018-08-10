@@ -44,6 +44,7 @@ namespace radioalert
     bool isConfigChanged( void );                       //! errechne anhand des crypto-Hashwertes Veränderung
     bool isConfigFileChanged( void );                   //! wurde die datei verändert?
     QMutex *getLockMutexPtr( void );                    //! gib den zeiger für den Mutex für externe Sperrung
+    QByteArray getConfigHashLoad() const;               //! den aktuellen Hashwert ausgeben
 
     private:
     QByteArray makeConfigHash( void );  //! erzeuge einen crypto hash für die Daten

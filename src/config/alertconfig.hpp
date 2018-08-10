@@ -14,7 +14,7 @@ namespace radioalert
 {
   class AlertConfig
   {
-    private:
+    public:
     static const QString dateKey;
     static const QString timeKey;
     static const QString raiseVolKey;
