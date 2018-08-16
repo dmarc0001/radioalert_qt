@@ -2,7 +2,9 @@
 
 namespace radioalert
 {
-  SingleAlertConfig::SingleAlertConfig( void ) : alertIsBusy( false )
+  SingleAlertConfig::SingleAlertConfig( void )
+      : alertRaiseVol( false ), alertVolume( 10 ), alertEnable( false ), alertDuration( 600 ), alertIsBusy( false )
+
   {
   }
 

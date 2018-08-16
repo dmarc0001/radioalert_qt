@@ -17,15 +17,20 @@ namespace radioalert
   {
     Q_OBJECT
     private:
-    static const QString alertRootStr;
-    static const QRegExp alertExpr;
-    static const QString allAlertExpr;
-    static const QRegExp noAlertExpr;
-    static const QString commandGet;
-    static const QString commandConfigId;
-    static const QString answerConfigVersion;
-    static const QString commandConfig;
-    static const QString commandDevices;
+    static const QString okString;             //! antwort bei set für OK
+    static const QString errString;            //! antwort bei Fehlern
+    static const QString alertRootStr;         //! basisstring für alert
+    static const QRegExp alertExpr;            //! regex zum Finden eines alert in der Konfiguration
+    static const QRegExp noAlertExpr;          //! Alles was nicht alert ist
+    static const QString cmdGet;               //! Kommando GET
+    static const QString cmdGetAllAlerts;      //! unterkommando zum erfragen aller Alarme
+    static const QString cmdGetConfigId;       //! unterkommando für Konfigurations-Id
+    static const QString cmdGetConfigVersion;  //! unterkommando für Version der Config
+    static const QString cmdGetConfig;         //! unterkommando für Programmkonfiguration
+    static const QString cmdGetDevices;        //! unterkommando für vorhandene Geräte
+    static const QString cmdGetNew;            //! unterkommando zum erzeuen und herausgeben eines neuen, leerren alarms
+    static const QString cmdSet;               //! Kommando SET
+    static const QString cmdSetAlertName;      //! unterkommando Name des zu bearbeitenden Alarms
     //
     std::shared_ptr< Logger > lg;             //! der Logfer
     std::shared_ptr< AppConfigClass > cf;     //! App Config
@@ -45,6 +50,8 @@ namespace radioalert
     QByteArray computeGetAlerts( QStringList &alerts ) const;  //! bearbeitet alarm rquests
     QByteArray computeGetGlobalConfig( void ) const;           //! globale Onfiguration erstellen
     QByteArray computeGetDevices( void ) const;                //! verfügbare Geräte zusammenstellen
+    QByteArray computeGetNew( void ) const;                    //! bearbeite die Anforderung nach einem neuen alarm
+    QByteArray computeSetCommand( QJsonValue jsonVal ) const;  //! wertet SET aus
 
     signals:
     void closeUdpServer( void );
