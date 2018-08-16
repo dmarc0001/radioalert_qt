@@ -31,6 +31,7 @@ namespace radioalert
     static const QString cmdGetNew;            //! unterkommando zum erzeuen und herausgeben eines neuen, leerren alarms
     static const QString cmdSet;               //! Kommando SET
     static const QString cmdSetAlertName;      //! unterkommando Name des zu bearbeitenden Alarms
+    static const QString cmdAlertDelete;       //! Kommando Alarm löschen
     //
     std::shared_ptr< Logger > lg;             //! der Logfer
     std::shared_ptr< AppConfigClass > cf;     //! App Config
@@ -52,6 +53,7 @@ namespace radioalert
     QByteArray computeGetDevices( void ) const;                //! verfügbare Geräte zusammenstellen
     QByteArray computeGetNew( void ) const;                    //! bearbeite die Anforderung nach einem neuen alarm
     QByteArray computeSetCommand( QJsonValue jsonVal ) const;  //! wertet SET aus
+    QByteArray computeDelCommand( QJsonValue jsonVal ) const;  //! wertet DEL aus
 
     signals:
     void closeUdpServer( void );

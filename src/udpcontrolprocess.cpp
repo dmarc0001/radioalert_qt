@@ -16,6 +16,7 @@ namespace radioalert
   const QString UdpControlProcess::cmdGetNew{"new"};
   const QString UdpControlProcess::cmdSet{"set"};
   const QString UdpControlProcess::cmdSetAlertName{"alert"};
+  const QString UdpControlProcess::cmdAlertDelete{"del"};
 
   //###########################################################################
   //###########################################################################
@@ -91,7 +92,7 @@ namespace radioalert
             if ( cmdGet.compare( *strId ) == 0 )
             {
               //
-              // Kommando GET (für einen /alle Alarme
+              // Kommando GET (für einen /alle Alarme )
               //
               QByteArray sendDatagram( computeGetCommand( bObject.value( *strId ) ) );
               //
@@ -107,7 +108,7 @@ namespace radioalert
             else if ( cmdSet.compare( *strId ) == 0 )
             {
               //
-              // Kommando SET (für Alarm(e)
+              // Kommando SET (für Alarm(e) )
               //
               QByteArray sendDatagram( computeSetCommand( bObject.value( *strId ) ) );
               //
@@ -116,6 +117,22 @@ namespace radioalert
               if ( sendDatagram.count() > 0 )
               {
                 LGDEBUG( "UdpControlProcess::slotRreadPendingDatagrams -> send answer for alert set request..." );
+                udpSocket->writeDatagram( sendDatagram, datagram.senderAddress(), datagram.senderPort() );
+              }
+              return;
+            }
+            else if ( cmdAlertDelete.compare( *strId ) == 0 )
+            {
+              //
+              // Kommando DELETE (für Alarm(e)
+              //
+              QByteArray sendDatagram( computeDelCommand( bObject.value( *strId ) ) );
+              //
+              // return to sender
+              //
+              if ( sendDatagram.count() > 0 )
+              {
+                LGDEBUG( "UdpControlProcess::slotRreadPendingDatagrams -> send answer for alert del request..." );
                 udpSocket->writeDatagram( sendDatagram, datagram.senderAddress(), datagram.senderPort() );
               }
               return;
@@ -562,4 +579,54 @@ namespace radioalert
     return ( QByteArray() );
   }
 
+  //###########################################################################
+  //#### DELETE Kommandos bearbeiten
+  //###########################################################################
+
+  QByteArray UdpControlProcess::computeDelCommand( QJsonValue jsonVal ) const
+  {
+    //
+    // ich erwarte ein array, editiere einen/mehrere vorhandenen alarm
+    // set editert NUR Alarme
+    // Parameter können sein
+    // [alert-\d\d]
+    // {"del":["alert-01", "alert-02"]}
+    //
+    LGDEBUG( "UdpControlProcess::computeDelCommand..." );
+    if ( jsonVal.isArray() )
+    {
+      QJsonObject answerObject;
+      QStringList alerts = cf->getAlertList().keys();  // Liste der konfigurierten Alarme
+      //
+      // get objekt ist ein Array
+      // also caste zum Array
+      //
+      QJsonArray alertDelArray = jsonVal.toArray();
+      for ( QJsonArray::iterator alIter = alertDelArray.begin(); alIter != alertDelArray.end(); alIter++ )
+      {
+        if ( ( *alIter ).isString() )
+        {
+          //
+          // hier ist der alarmname zum löschen
+          //
+          QString alertName = ( *alIter ).toString();
+          if ( alerts.contains( alertName ) )
+          {
+            LGDEBUG( QString( "UdpControlProcess::computeDelCommand -> remove <%1> from config..." ).arg( alertName ) );
+            cf->getAlertList().remove( alertName );
+          }
+          else
+          {
+            LGWARN( QString( "UdpControlProcess::computeDelCommand -> can't remove <%1> from config. It's not there..." )
+                        .arg( alertName ) );
+          }
+        }
+      }
+      answerObject.insert( okString, "alert(s) successful removed" );
+      QJsonDocument answerDoc( answerObject );
+      QByteArray retArr( answerDoc.toJson() );
+      return ( retArr );
+    }
+    return ( QByteArray() );
+  }
 }  // namespace radioalert
