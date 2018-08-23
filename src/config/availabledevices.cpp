@@ -70,9 +70,9 @@ namespace radioalert
       //
       // Host type erfragen
       //
-      stDevice.deviceTyype = settings.value( deviceType, QLatin1String( "unknown" ) ).toString();
+      stDevice.deviceType = settings.value( deviceType, QLatin1String( "unknown" ) ).toString();
       qDebug().nospace().noquote() << QLatin1String( "AvailablaDevices::loadSettings: " ) << deviceType << QLatin1String( ": " )
-                                   << stDevice.deviceTyype;
+                                   << stDevice.deviceType;
       //
       // Host http port erfragen
       //

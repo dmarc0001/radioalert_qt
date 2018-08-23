@@ -218,4 +218,9 @@ namespace radioalert
     return ( &configLocker );
   }
 
+  QByteArray AppConfigClass::getConfigHashLoad() const
+  {
+    return configHashLoad.toHex();
+  }
+
 }  // namespace radioalert

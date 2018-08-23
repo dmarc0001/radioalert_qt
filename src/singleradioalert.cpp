@@ -20,12 +20,14 @@ namespace radioalert
       , lg( logger )
       , localAlertConfig( alert )
       , avStDevices( devices )
+      , alertCommand( std::unique_ptr< AsyncAlertCommand >( new AsyncAlertCommand( lg, parent ) ) )
       , alertLoopCounter( 0 )
       , masterDeviceStat( deviceStatus::NONE )
       , isActive( true )
       , callBackWsConnected( false )
       , connectWsTrysCount( 0 )
       , oldVolume( -1 )
+      , isUserVolumeAction( false )
   {
     LGINFO( QString( "start radio alert %1 at %2" )
                 .arg( localAlertConfig.getAlertName() )
@@ -36,6 +38,7 @@ namespace radioalert
     //
     if ( !checkIfDevicesAvailible() )
     {
+      isActive = false;
       throw NoAvailibleSoundDeviceException( QLatin1String( "no available devices for alert!" ) );
     }
   }
@@ -48,7 +51,7 @@ namespace radioalert
     LGDEBUG( "SingleRadioAlert::~SingleRadioAlert..." );
     waitForTimer.stop();
     disconnect( &waitForTimer, 0, 0, 0 );
-    disconnect( masterDevice.get(), 0, 0, 0 );
+    disconnect( masterDevice.get() );
     // emit sigAlertFinished( this );
   }
 
@@ -83,49 +86,60 @@ namespace radioalert
         // Alarmzeit abgelaufen
         // Kontrollieren, damit das nur ein mal aufgerufen wird
         //
-        if ( masterDeviceStat == deviceStatus::PLAY_ALERT )
+        if ( masterDeviceStat == deviceStatus::ALERT_IS_PLAYING )
         {
-          if ( localAlertConfig.getAlertRaiseVol() && isActive )
+          if ( localAlertConfig.getAlertRaiseVol() && isActive && !isUserVolumeAction )
           {
             //
             // ok sanft ausdimmen, Kennzeichne das mit ENDING_ALERT
             //
-            masterDeviceStat = deviceStatus::ENDING_ALERT;
+            masterDeviceStat = deviceStatus::ALERT_IS_ENDING;
             waitForTimer.setSingleShot( false );
             sendVolume = currentVolume;
             connect( &waitForTimer, &QTimer::timeout, [=]() {
-              // runterdimmen
-              masterDevice->setVolume( sendVolume-- );
+              // runterdimmen ohne callbackkontrolle
+              masterDevice->setVolume( --sendVolume );
               if ( sendVolume <= 0 )
               {
-                connect( &waitForTimer, 0, 0, 0 );
-                waitForTimer.stop();
-                masterDeviceStat = deviceStatus::ALERT_FINISH;
+                disconnect( &( this->waitForTimer ), 0, 0, 0 );
+                this->waitForTimer.stop();
+                this->masterDeviceStat = deviceStatus::ALERT_IS_FINISHED;
               }
             } );
             waitForTimer.start( DIMMERTIMEVELUE );
           }
           else
           {
-            masterDeviceStat = deviceStatus::ALERT_FINISH;
+            masterDeviceStat = deviceStatus::ALERT_IS_FINISHED;
           }
         }  // ende if PLAY_ALERT
-        else if ( masterDeviceStat == deviceStatus::ENDING_ALERT )
+        else if ( masterDeviceStat == deviceStatus::ALERT_IS_ENDING )
         {
           // hier geht es lang, wenn ich noch dimme
           LGDEBUG(
               QString( "SingleRadioAlert::slotOnZyclonTimer: alert %1 wait for end dimming" ).arg( localAlertConfig.getAlertName() ) );
-        }
-        else
+        }  // ende ENDING_ALERT
+        else if ( masterDeviceStat == deviceStatus::ALERT_IS_FINISHED )
         {
           //
-          // wenn nicht PLAY_ALERT und nicht ENDING_ALERT dann ist das wohl das Ende
+          // jetz nur noch ausschalten
           //
-          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: alert regulay endet" );
-          masterDeviceStat = deviceStatus::ALERT_FINISH;
-          masterDevice->setKey( BoseDevice::bose_key::KEY_POWER, BoseDevice::bose_keystate::KEY_TOGGLE );
-          QThread::sleep( 200 );
-          masterDevice->setVolume( oldVolume );
+          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: alert regulay ending..." );
+          switchDeviceOff();
+          return;
+        }
+        // ende ALERT_FINISH
+        else if ( masterDeviceStat == deviceStatus::DEVICE_IS_SWITCH_OFF )
+        {
+          //
+          // warten auf Abschalten
+          //
+          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: wait for switch off..." );
+        }  // ende ALERT_SWITCH_OFF
+        else if ( masterDeviceStat == deviceStatus::ALERT_IS_ENDET )
+        {
+          sendVolume = oldVolume;
+          masterDevice->setVolume( sendVolume );
           isActive = false;
           disconnect( masterDevice.get(), 0, 0, 0 );
           emit sigAlertFinished( this );
@@ -156,18 +170,17 @@ namespace radioalert
     // entferne Master aus der Liste
     //
     masterDeviceData = realDevices.take( masterDeviceName );
-    LGDEBUG( "SingleRadioAlert::SingleRadioAlert: create BSoundTouchDevice, masterr device is %1..." );
+    LGDEBUG( QString( "SingleRadioAlert::start: create BSoundTouchDevice, masterr device is %1..." ).arg( masterDeviceName ) );
     masterDevice = std::unique_ptr< BoseDevice >(
         new BoseDevice( masterDeviceData.hostName, masterDeviceData.wsPort, masterDeviceData.httpPort ) );
     connect( masterDevice.get(), &BoseDevice::sigOnRequestAnswer, this, &SingleRadioAlert::slotOnRequestAnswer );
-    LGDEBUG( "SingleRadioAlert::SingleRadioAlert: create BSoundTouchDevice...OK" );
+    LGDEBUG( "SingleRadioAlert::start: create BSoundTouchDevice...OK" );
     alertDuration = localAlertConfig.getAlertDuration();
     //
     // 01:
     // anfrage senden: ist das master device frei (also im standby)?
     //
     masterDeviceStat = deviceStatus::NONE;
-    masterDevice->getNowPlaying();
     // wie lange geht der Spass?
     //
     // jetzt warten wir auf now playing == "STANDBY"
@@ -178,11 +191,270 @@ namespace radioalert
     connect( &waitForTimer, &QTimer::timeout, [=]() {
       this->cancelAlert( QString( "timeout while waiting for now playing in alert %1" ).arg( localAlertConfig.getAlertName() ) );
     } );
+    auto conn = std::make_shared< QMetaObject::Connection >();
+    *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceIsStandby, [=]( bool isStandby ) {
+      disconnect( *conn );
+      // Antwort ob das Gerät im Standby ist
+      if ( isStandby )
+      {
+        // Alles Gut, Gerät ist im Standby
+        // TIMER STOPPEN
+        disconnect( &( this->waitForTimer ), 0, 0, 0 );
+        this->waitForTimer.stop();
+        //
+        // und Lautstärke erfragen (zum wieder einstellen nach dem Wecker)
+        // wird über Callback dann ausgelesen, asyncron
+        //
+        this->masterDevice->getVolume();
+        // zu Schritt 02
+        LGDEBUG( "SingleRadioAlert::start: device is STANDBY, go to set volume" );
+        this->getDeviceStartVolume();
+      }
+      else
+      {
+        // nix ist gut
+        this->cancelAlert( QString( "device is NOT in standby Mode for alert %1" ).arg( localAlertConfig.getAlertName() ) );
+      }
+    } );
     //
     // um den Erfolg abzuwenden müsste man den timer stoppen
     // der wird nur gestoppt, wenn nowPlaying STANDBY empfängt und der Status des Gerätes NONE ist
     //
     waitForTimer.start( RESPONSETIMEOUT );
+    //
+    // die Anfrage ausführen
+    //
+    LGDEBUG( "SingleRadioAlert::start: check if device in Standby..." );
+    alertCommand->checkIfDeviceInStandby( masterDevice.get() );
+  }
+
+  void SingleRadioAlert::getDeviceStartVolume( void )
+  {
+    //
+    // Schritt 02
+    // Lautstärke initial erfragen
+    // wenn das nicht innerhalb der TIMEOUT zeit passiert oder das Gerät
+    // etwas abspielt, vergessen wir das...
+    //
+    LGDEBUG( "SingleRadioAlert::getDeviceStartVolume..." );
+    waitForTimer.setSingleShot( true );
+    connect( &waitForTimer, &QTimer::timeout, [=]() {
+      this->cancelAlert( QString( "timeout while waiting for get volume in alert %1" ).arg( localAlertConfig.getAlertName() ) );
+    } );
+    auto conn = std::make_shared< QMetaObject::Connection >();
+    *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceVolume, [=]( int cVolume ) {
+      disconnect( *conn );
+      // hier die aktuelle Lautstärke
+      currentVolume = cVolume;
+      if ( oldVolume < 0 )
+      {
+        oldVolume = cVolume;
+      }
+      // Alles Gut, Lautstärke gelesen
+      // TIMER STOPPEN
+      disconnect( &( this->waitForTimer ), 0, 0, 0 );
+      this->waitForTimer.stop();
+      //
+      // weiter zu Schritt 03
+      //
+      this->masterDeviceStat = deviceStatus::DEVICE_STANDBY;
+      LGDEBUG( "SingleRadioAlert::getDeviceStartVolume: set volume OK, now switch source on device..." );
+      this->switchMasterDeviceToSource();
+    } );
+    //
+    // um den Erfolg abzuwenden müsste man den timer stoppen
+    // der wird nur gestoppt, wenn nowPlaying STANDBY empfängt und der Status des Gerätes NONE ist
+    //
+    waitForTimer.start( RESPONSETIMEOUT );
+    //
+    // die Anfrage ausführen
+    //
+    alertCommand->askForVolume( masterDevice.get() );
+  }
+
+  /**
+   * @brief SingleRadioAlert::switchMasterDeviceToSource
+   * @param nPlayObj
+   * schalte das Masterdevice zur konfigurierten Quelle
+   */
+  void SingleRadioAlert::switchMasterDeviceToSource( void )
+  {
+    LGDEBUG( "SingleRadioAlert::switchMasterDeviceToSource..." );
+    //
+    // erst mal auf LEISE (asyncron)
+    //
+    sendVolume = 0;
+    masterDevice->setVolume( sendVolume );
+    //
+    // Schritt 03:
+    // Radio einschalten
+    // TODO: gilt nur für PRESETS -> Anpassung erforderlich wenn erweitert
+    // warte bis das Gerät eingeschaltet ist und BUFFERING oder PLAY_STATE gemeldet wird
+    // während der Status noch STANDBY ist
+    // dann weiter mit 04 (warten während buffering bis status play)
+    //
+    auto conn = std::make_shared< QMetaObject::Connection >();
+    *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceIsSwitchedToSource, [=]( bool isSwitched ) {
+      // Antwort ob das Gerät umgeschaltet hat und läuft
+      if ( isSwitched )
+      {
+        disconnect( *conn );
+        // Alles Gut, Gerät spielt
+        // TIMER STOPPEN
+        disconnect( &( this->waitForTimer ), 0, 0, 0 );
+        this->waitForTimer.stop();
+        //
+        // zu Schritt 04 , Sklaven verbinden
+        //
+        masterDeviceStat = deviceStatus::DEVICE_PLAYING;
+        this->connectDeviceSlaves();
+      }
+      else
+      {
+        // nix ist gut
+        // gerät ist noch am puffern...
+      }
+    } );
+    //
+    // Timeout einschalten
+    //
+    waitForTimer.setSingleShot( true );
+    connect( &waitForTimer, &QTimer::timeout, [=]() {
+      this->cancelAlert( QString( "timeout while waiting for switch to source in alert %1" ).arg( localAlertConfig.getAlertName() ) );
+    } );
+    //
+    // um den Erfolg abzuwenden müsste man den timer stoppen
+    waitForTimer.start( RESPONSETIMEOUT );
+    //
+    // Abfrage starten
+    //
+    alertCommand->switchDeviceToSource( masterDevice.get(), localAlertConfig.getAlertSource() );
+  }
+
+  void SingleRadioAlert::connectDeviceSlaves( void )
+  {
+    //
+    // Schritt 04
+    // verbinde Sklaven, wenn vorhanden
+    //
+    if ( realDevices.count() > 0 )
+    {
+      masterDeviceStat = deviceStatus::DEVICE_INIT_GROUP;
+      LGDEBUG( "SingleRadioAlert::connectDeviceSlaves: build an zone for play..." );
+      //
+      // versuche 04a, Gruppenbildung...
+      // Gruppe bilden
+      //
+      slaveList.clear();
+      for ( auto it = realDevices.keyBegin(); it != realDevices.keyEnd(); it++ )
+      {
+        LGDEBUG( QString( "SingleRadioAlert::connectDeviceSlaves: add slave: %1" ).arg( realDevices.value( *it ).hostName ) );
+        slaveList.append( SoundTouchMemberObject( realDevices.value( *it ).hostName, realDevices.value( *it ).deviceId ) );
+      }
+      masterDevice->setZone( masterDeviceData.deviceId, slaveList );
+      QThread::sleep( 400 );
+      //
+      // TODO: evtl noch überwachen, dass die zohne eingerichtet wurde
+      //
+    }
+    else
+    {
+      //
+      // Gehe zu Schritt 05, dimme oder stelle Lautstärke auf Konfigurierten Wert
+      //
+      computeVolumeForDevice();
+    }
+  }
+
+  void SingleRadioAlert::computeVolumeForDevice( void )
+  {
+    //
+    // Schritt 05
+    // das Gerät spielt die Source, jetzt Lautstärke einstellen
+    //
+    masterDeviceStat = deviceStatus::ALERT_IS_PLAYING;
+    //#####################################################################
+    // ab hier ist der Alarm im Gange
+    //#####################################################################
+    //
+    // Callbacks einrichten, Websocket verbinden
+    //
+    LGDEBUG( "SingleRadioAlert::computeVolumeForDevice: connect ws callbacks..." );
+    connectCallbacksforDevice();
+    LGDEBUG( "SingleRadioAlert::computeVolumeForDevice: connect ws callbacks...OK" );
+    //
+    if ( !isUserVolumeAction )
+    {
+      //
+      // der User hat eingegriffen, also keine Lautstärkeaktion mehr vom Programm
+      // sollte eingeltlich hier noch nicht gehen
+      //
+      if ( localAlertConfig.getAlertRaiseVol() )
+      {
+        LGDEBUG( "raise volume: started!" );
+        waitForTimer.setSingleShot( false );
+        sendVolume = 0;
+        this->masterDevice->setVolume( ++sendVolume );
+        //
+        // Missbrauche den Timer zum Dimmen...
+        //
+        connect( &waitForTimer, &QTimer::timeout, [=]() {
+          if ( sendVolume != currentVolume )
+            return;
+          // Lambda zum hochdimmen
+          this->masterDevice->setVolume( ++sendVolume );
+          if ( sendVolume >= localAlertConfig.getAlertVolume() )
+          {
+            disconnect( &( this->waitForTimer ), 0, 0, 0 );
+            LGDEBUG( "raise volume: reached!" );
+            this->waitForTimer.stop();
+            this->disconnectCallbacksforDevice();
+          }
+        } );
+        waitForTimer.start( DIMMERTIMEVELUE );
+      }
+      else
+      {
+        sendVolume = localAlertConfig.getAlertVolume();
+        masterDevice->setVolume( sendVolume );
+      }
+    }
+    //
+    // ###### Ab hier läuft der Alarm #####
+    //
+  }
+
+  void SingleRadioAlert::switchDeviceOff( void )
+  {
+    //
+    // Gerät ausschalten, mit Timeout
+    //
+    // markiere ausschalten
+    masterDeviceStat = deviceStatus::DEVICE_IS_SWITCH_OFF;
+    auto conn = std::make_shared< QMetaObject::Connection >();
+    *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceIsPoweredOFF, [=]() {
+      // Antwort das das Gerät AUS ist
+      disconnect( *conn );
+      disconnect( &( this->waitForTimer ), 0, 0, 0 );
+      this->waitForTimer.stop();
+      this->isActive = false;
+      // markiere FERTICH
+      this->masterDeviceStat = deviceStatus::ALERT_IS_ENDET;
+    } );
+    //
+    // Timeout einschalten
+    //
+    waitForTimer.setSingleShot( true );
+    connect( &waitForTimer, &QTimer::timeout, [=]() {
+      this->cancelAlert( QString( "timeout while waiting for switch off device alert %1" ).arg( localAlertConfig.getAlertName() ) );
+    } );
+    //
+    // um den Erfolg abzuwenden müsste man den timer stoppen
+    waitForTimer.start( RESPONSETIMEOUT );
+    //
+    // Auftrag starten
+    //
+    alertCommand->switchPowerOff( masterDevice.get() );
   }
 
   /**
@@ -237,7 +509,7 @@ namespace radioalert
       else
       {
         LGWARN(
-            QString( "RadioAlertThread::checkIfDevicesAvailible: device %1 was not discovered in the network..." ).arg( *alDevice ) );
+            QString( "SingleRadioAlert::checkIfDevicesAvailible: device %1 was not discovered in the network..." ).arg( *alDevice ) );
       }
     }
     LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: done." );
@@ -254,7 +526,7 @@ namespace radioalert
                   .arg( localAlertConfig.getAlertDevices().join( "," ) ) );
       return ( false );
     }
-    LGDEBUG( "RadioAlertThread::checkIfDevicesAvailible: check if devices availible...OK" );
+    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: check if devices availible...OK" );
     return ( true );
   }
 
@@ -276,6 +548,7 @@ namespace radioalert
     // besteht eine Verbindung, Marker setzen
     connect( masterDevice.get(), &BoseDevice::sigOnWSConnected, [=]() {
       callBackWsConnected = true;
+      connectWsTrysCount = 0;  // zurücksetzten der Fehlversuche...
       LGDEBUG( "SingleRadioAlert::connectCallbacksforDevice: device callback estabished..." );
     } );
     // geht Verbindung verloren, neu versuchen
@@ -283,12 +556,8 @@ namespace radioalert
       callBackWsConnected = false;
       LGDEBUG( "SingleRadioAlert::connectCallbacksforDevice: device callback connection lost..." );
       // Signale wieder trennen (ergänzen, wenn mehr verbunden werden)
-      disconnect( masterDevice.get(), &BoseDevice::sigOnWSConnected, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnWSDisConnected, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnPresetSelectionUpdated, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnErrorUpdated, 0, 0 );
-      disconnect( masterDevice.get(), &BoseDevice::sigOnNowPlayingUpdated, 0, 0 );
+      this->disconnectCallbacksforDevice();
+      // neu verbinden!
       this->connectCallbacksforDevice();
     } );
     // Lautstärke Callback
@@ -296,9 +565,19 @@ namespace radioalert
       WsVolumeUpdated *volObj = static_cast< WsVolumeUpdated * >( respObj.get() );
       currentVolume = volObj->getActualVolume();
       if ( oldVolume == -1 )
+      {
         oldVolume = currentVolume;
-      LGDEBUG( QString( "SingleRadioAlert::connectCallbacksforDevice: volume callback. volume: %1" )
-                   .arg( currentVolume, 3, 10, QChar( '0' ) ) );
+        isUserVolumeAction = false;
+      }
+      if ( currentVolume != sendVolume )
+      {
+        isUserVolumeAction = true;
+        disconnect( &( this->waitForTimer ), 0, 0, 0 );
+        LGINFO( "user has changed the volume, not more touching volume via this alert..." );
+        LGDEBUG( QString( "current volume <%1>, sendVolume <%2>..." ).arg( currentVolume ).arg( sendVolume ) );
+        this->waitForTimer.stop();
+        this->disconnectCallbacksforDevice();
+      }
     } );
     // Sender gewechselt
     connect( masterDevice.get(), &BoseDevice::sigOnPresetSelectionUpdated, [=]( SharedResponsePtr respObj ) {
@@ -324,131 +603,53 @@ namespace radioalert
     masterDevice->connectWs();
   }
 
+  /**
+   * @brief SingleRadioAlert::disconnectCallbacksforDevice
+   */
+  void SingleRadioAlert::disconnectCallbacksforDevice( void )
+  {
+    // Signale wieder trennen (ergänzen, wenn mehr verbunden werden)
+    disconnect( masterDevice.get(), &BoseDevice::sigOnWSConnected, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnWSDisConnected, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnPresetSelectionUpdated, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnErrorUpdated, 0, 0 );
+    disconnect( masterDevice.get(), &BoseDevice::sigOnNowPlayingUpdated, 0, 0 );
+  }
+
   void SingleRadioAlert::slotOnRequestAnswer( SharedResponsePtr response )
   {
     //
-    LGDEBUG( "RadioAlertThread::slotOnRequestAnswer..." );
+    LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer..." );
     switch ( response->getResultType() )
     {
       default:
-        LGWARN( QString( "RadioAlertThread::slotOnRequestAnswer: %1" ).arg( static_cast< int >( response->getResultType() ) ) );
+        LGWARN( QString( "SingleRadioAlert::slotOnRequestAnswer: %1" ).arg( static_cast< int >( response->getResultType() ) ) );
         break;
 
       case ResultobjectType::R_OK:
-        LGDEBUG( "RadioAlertThread::slotOnRequestAnswer: status" );
+        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer: status" );
         computeStausMsg( response );
         break;
 
       case ResultobjectType::R_VOLUME:
-        LGDEBUG( "RadioAlertThread::slotOnRequestAnswer: volume" );
+        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer: volume" );
         computeVolumeMsg( response );
         break;
 
       case ResultobjectType::R_NOW_PLAYING:
-        LGDEBUG( "RadioAlertThread::slotOnRequestAnswer: now playing" );
+        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer: now playing" );
         computeNowPlayingMsg( response );
         break;
     }
   }
 
-  void SingleRadioAlert::slotOnNowPlayingUpdate( SharedResponsePtr respObj )
+  void SingleRadioAlert::slotOnNowPlayingUpdate( SharedResponsePtr /*respObj*/ )
   {
-    WsNowPlayingUpdate *nowPlayObj = static_cast< WsNowPlayingUpdate * >( respObj.get() );
-    //
-    // Puffer Status?
-    //
-    if ( nowPlayObj->getPlayStatus().contains( masterDevice->getPlayStateName( BoseDevice::bose_playstate::BUFFERING_STATE ) ) )
-    {
-      // Puffern?
-      // schritt 03a
-      // warten auf PLAY
-      if ( masterDeviceStat == deviceStatus::NONE )
-      {
-        //
-        // erst mal auf LEISE
-        //
-        masterDevice->setVolume( 0 );
-      }
-      masterDeviceStat = deviceStatus::BUFFERING;
-    }
+    // WsNowPlayingUpdate *nowPlayObj = static_cast< WsNowPlayingUpdate * >( respObj.get() );
     //
     // Abspielstatus?
-    //
-    else if ( nowPlayObj->getPlayStatus().contains( masterDevice->getPlayStateName( BoseDevice::bose_playstate::PLAY_STATE ) ) )
-    {
-      if ( masterDeviceStat == deviceStatus::NONE || masterDeviceStat == deviceStatus::BUFFERING )
-      {
-        //
-        // 04, das Gerät spielt
-        // OK Timer deaktivieren
-        //
-        LGDEBUG( "SingleRadioAlert::slotOnNowPlayingUpdate: timeout stopped..." );
-        disconnect( &waitForTimer, 0, 0, 0 );
-        waitForTimer.stop();
-        LGDEBUG( "SingleRadioAlert::slotOnNowPlayingUpdate: set master device status to PLAYING..." );
-        masterDeviceStat = deviceStatus::PLAYING;
-        //
-        // wenn in der Liste noch Geräte vorhanden sind, dann sind das SKLAVEN
-        //
-        if ( realDevices.count() > 0 )
-        {
-          masterDeviceStat = deviceStatus::INIT_GROUP;
-          LGDEBUG( "SingleRadioAlert::slotOnNowPlayingUpdate: build an zone for play..." );
-          //
-          // versuche 4a, Gruppenbildung...
-          // Gruppe bilden
-          //
-          slaveList.clear();
-          for ( auto it = realDevices.keyBegin(); it != realDevices.keyEnd(); it++ )
-          {
-            LGDEBUG( QString( "SingleRadioAlert::slotOnNowPlayingUpdate: add slave: %1" ).arg( realDevices.value( *it ).hostName ) );
-            slaveList.append( SoundTouchMemberObject( realDevices.value( *it ).hostName, realDevices.value( *it ).deviceId ) );
-          }
-          masterDevice->setZone( masterDeviceData.deviceId, slaveList );
-          QThread::sleep( 400 );
-          //
-          // TODO: evtl noch überwachen, dass die zohne eingerichtet wurde
-          //
-        }
-        masterDeviceStat = deviceStatus::PLAY_ALERT;
-        //#####################################################################
-        // ab hier ist der Alarm im Gange
-        //#####################################################################
-        if ( localAlertConfig.getAlertRaiseVol() )
-        {
-          LGDEBUG( "raise volume: started!" );
-          waitForTimer.setSingleShot( false );
-          sendVolume = 0;
-          connect( &waitForTimer, &QTimer::timeout, [=]() {
-            // Lambda zum hochdimmen
-            masterDevice->setVolume( sendVolume++ );
-            if ( sendVolume >= localAlertConfig.getAlertVolume() )
-            {
-              disconnect( &waitForTimer, 0, 0, 0 );
-              LGDEBUG( "raise volume: reached!" );
-              waitForTimer.stop();
-            }
-          } );
-          waitForTimer.start( DIMMERTIMEVELUE );
-        }
-        else
-        {
-          masterDevice->setVolume( localAlertConfig.getAlertVolume() );
-        }
-      }
-      else
-      {
-        // TODO: was sinnvolles machen, momentan einfach nix
-      }
-    }
-    else
-    {
-      //
-      // da hat jemand eingegriffen, beende alle Aktionen
-      //
-      LGWARN( QString( "SingleRadioAlert::slotOnNowPlayingUpdate: device going to state: %1" ).arg( nowPlayObj->getPlayStatus() ) );
-      cancelAlert( "device going in state stop/pause, cancel alert!" );
-    }
+    // TODO: wird umgeschaltet, alarm beenden
   }
 
   void SingleRadioAlert::computeStausMsg( SharedResponsePtr response )
@@ -477,85 +678,6 @@ namespace radioalert
   {
     HttpNowPlayingObject *nPlayObj = static_cast< HttpNowPlayingObject * >( response.get() );
     LGDEBUG( QString( "SingleRadioAlert::computeNowPlayingMsg: recived type: SOURCE <%1>" ).arg( nPlayObj->getSource() ) );
-    switch ( masterDeviceStat )
-    {
-      case deviceStatus::NONE:
-        //
-        // wenn das Gerät noch keinen Status hat, war das die Frage ob
-        // es im STANDBY ist, da sollte dann die Meldung kommen, das Gerät ist da und AUS
-        //
-        switchMasterDeviceToSource( nPlayObj );
-        break;
-
-      default:
-        LGDEBUG( "SingleRadioAlert::computeNowPlayingMsg: master device status is NOT expected/supported" );
-    }
-  }
-
-  /**
-   * @brief SingleRadioAlert::switchMasterDeviceToSource
-   * @param nPlayObj
-   * schalte das Masterdevice zur konfigurierten Quelle
-   */
-  void SingleRadioAlert::switchMasterDeviceToSource( HttpNowPlayingObject *nPlayObj )
-  {
-    LGDEBUG( "SingleRadioAlert::switchMasterDeviceToSource: master device status is NONE" );
-    if ( ( nPlayObj->getSource() ).compare( QLatin1String( "STANDBY" ) ) == 0 )
-    {
-      // die Timeoutfuntion löschen
-      LGDEBUG( "SingleRadioAlert::switchMasterDeviceToSource: timeout stopped..." );
-      disconnect( &waitForTimer, 0, 0, 0 );
-      waitForTimer.stop();
-      LGDEBUG( "SingleRadioAlert::switchMasterDeviceToSource: set master device status to STANDBY" );
-      masterDeviceStat = deviceStatus::STANDBY;
-      //
-      // 02:
-      // Callbacks einrichten, Websocket verbinden
-      //
-      LGDEBUG( "SingleRadioAlert::switchMasterDeviceToSource: connect ws callbacks..." );
-      connectCallbacksforDevice();
-      LGDEBUG( "SingleRadioAlert::switchMasterDeviceToSource: connect ws callbacks...OK" );
-      //
-      // und Lautstärke erfragen (zum wieder einstellen nach dem Wecker)
-      // wird über Callback dann ausgelesen, asyncron
-      //
-      masterDevice->getVolume();
-      //
-      // 03:
-      // Radio einschalten
-      // TODO: gilt nur für PRESETS -> Anpassung erforderlich wenn erweitert
-      //
-      BoseDevice::bose_key preset = masterDevice->getKeyForName( localAlertConfig.getAlertSource() );
-      if ( preset == BoseDevice::bose_key::KEY_UNKNOWN )
-      {
-        LGWARN( QString( "SingleRadioAlert::switchMasterDeviceToSource: alert source unknown: " )
-                    .append( localAlertConfig.getAlertSource() ) );
-        cancelAlert( QString( "alert source %1 unknown / not supported" ).arg( localAlertConfig.getAlertSource() ) );
-        return;
-      }
-      LGDEBUG( QString( "SingleRadioAlert::switchMasterDeviceToSource: now switch to source " )
-                   .append( localAlertConfig.getAlertSource() ) );
-      masterDevice->setKey( preset, BoseDevice::bose_keystate::KEY_RELEASED );
-      //
-      // warte bis das Gerät eingeschaltet ist und BUFFERING oder PLAY_STATE gemeldet wird
-      // während der Status noch STANDBY ist
-      // dann weiter mit 03a (warten währen buffering) oder 04 (playstatus)
-      //
-      waitForTimer.setSingleShot( true );
-      connect( &waitForTimer, &QTimer::timeout, [=]() {
-        this->cancelAlert(
-            QString( "timeout while waiting for switch to source in alert %1" ).arg( localAlertConfig.getAlertName() ) );
-      } );
-      //
-      // um den Erfolg abzuwenden müsste man den timer stoppen
-      waitForTimer.start( RESPONSETIMEOUT );
-      return;
-    }
-    else
-    {
-      LGWARN( "SingleRadioAlert::computeNowPlayingMsg: NOT STANDBY == alert ignore!" );
-      cancelAlert( "device is NOT in STANDBY == alert ignore!" );
-    }
   }
 
 }  // namespace radioalert

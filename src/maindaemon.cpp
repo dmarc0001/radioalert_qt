@@ -35,6 +35,7 @@ namespace radioalert
       ( appConfig->getGlobalConfig() ).setLoglevel( LoggingThreshold::LG_DEBUG );
     lg = std::shared_ptr< Logger >( new Logger( appConfig ) );
     lg->startLogging();
+    udpProc = std::unique_ptr< UdpControlProcess >( new UdpControlProcess( lg, appConfig ) );
   }
 
   /**
@@ -72,6 +73,7 @@ namespace radioalert
     zyclon.start( mainTimerDelay );
     configZyclon.start( checkConfigTime );
     availDevicesZyclon.start( availDevices );
+    udpProc->init();
   }
 
   /**
@@ -113,7 +115,7 @@ namespace radioalert
     {
       LGINFO( "MainDaemon::requestQuit: kill thread..." );
       // signalisiere sein baldiges Ende
-      ( *alt )->cancelAlert();
+      ( *alt )->cancelAlert( "main daemon killed!" );
     }
     //
     // Aufräumen dem System/ der runtime überlassen :-)

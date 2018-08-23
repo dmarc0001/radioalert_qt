@@ -2,6 +2,7 @@
 #define SRC_CONFIG_GLOBALCONFIG_HPP
 
 #include <qglobal.h>
+#include <QDateTime>
 #include <QHostAddress>
 #include <QObject>
 #include <QSettings>
@@ -14,8 +15,8 @@ namespace radioalert
 {
   class GlobalConfig
   {
-    private:
-    static const QString groupName;           //! Gruppenname Logeinstellungen
+    public:
+    static const QString groupGlobalName;     //! Gruppenname Logeinstellungen
     static const QString logFileKey;          //! Einstellung für Logdatei
     static const QString logToConsoleKey;     //! Einstellung für loggen zur konsole
     static const QString serverPortKey;       //! Port an dem der daemon lauscht
@@ -30,6 +31,7 @@ namespace radioalert
     static const QString guiHeaderKey;        //! benutzerdefinierte Titelzeile
     static const QString devicesFileKey;      //! evtl extern discoverte Soundtouch Devices
     static const QString guiThemeKey;         //! welches Thema soll die GUI haben
+    private:
     // Members:
     qint16 serverPort;
     QHostAddress serverAddr;
@@ -47,6 +49,7 @@ namespace radioalert
     QString guiHeader;
     QString devicesFile;
     QString guiTheme;
+    qint64 configTimestamp;
 
     public:
     explicit GlobalConfig( void );
@@ -89,6 +92,7 @@ namespace radioalert
     QString getGuiTheme() const;
     void setGuiTheme( const QString &value );
     QByteArray serialize( void );
+    qint64 getConfigTimestampMs() const;
   };
 }  // namespace radioalert
 #endif  // GLOBALCONFIG_HPP

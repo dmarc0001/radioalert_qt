@@ -4,7 +4,7 @@
 
 namespace radioalert
 {
-  const QString GlobalConfig::groupName{"global"};
+  const QString GlobalConfig::groupGlobalName{"global"};
   const QString GlobalConfig::logFileKey{"logfile"};
   const QString GlobalConfig::logToConsoleKey{"log_to_console"};
   const QString GlobalConfig::serverPortKey{"server_port"};
@@ -28,6 +28,7 @@ namespace radioalert
       , raiseVol( false )
       , networkTimeout( 10 )
       , autorefresh( 5 )
+      , configTimestamp( 0 )
   {
   }
 
@@ -38,7 +39,7 @@ namespace radioalert
     //
     // Öffne die Gruppe Logeinstellungen als allererstes
     //
-    settings.beginGroup( groupName );
+    settings.beginGroup( groupGlobalName );
     //
     // Lese den Dateinamen for das Logfile
     //
@@ -68,7 +69,14 @@ namespace radioalert
     //
     // server Hostaddr
     //
-    serverAddr = QHostAddress( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString() );
+    if ( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString().trimmed().contains( QLatin1Literal( "localhost" ) ) )
+    {
+      serverAddr = QHostAddress::LocalHost;
+    }
+    else
+    {
+      serverAddr = QHostAddress( settings.value( serverAddrKey, QLatin1String( "localhost" ) ).toString().trimmed() );
+    }
     qDebug().noquote().nospace() << QLatin1String( "server host addr: <" ) << serverAddr.toString() << QLatin1String( ">" );
     //
     // Time zone
@@ -119,6 +127,7 @@ namespace radioalert
     //
     // Ergebnis kommunizieren
     //
+    configTimestamp = QDateTime::currentMSecsSinceEpoch();
     return ( retval );
   }
 
@@ -126,7 +135,7 @@ namespace radioalert
   {
     qDebug().noquote() << QLatin1String( "" );
     qDebug().noquote() << QLatin1String( "save globel settings...." );
-    settings.beginGroup( groupName );
+    settings.beginGroup( groupGlobalName );
     settings.setValue( logFileKey, logFile );
     settings.setValue( logToConsoleKey, logToConsole );
     settings.setValue( serverPortKey, serverPort );
@@ -142,13 +151,14 @@ namespace radioalert
     settings.setValue( devicesFileKey, devicesFile );
     settings.setValue( guiThemeKey, guiTheme );
     settings.endGroup();
+    configTimestamp = QDateTime::currentMSecsSinceEpoch();
     return ( true );
   }
 
   bool GlobalConfig::makeDefaultSettings( QSettings &settings )
   {
     qDebug().noquote() << "";
-    settings.beginGroup( groupName );
+    settings.beginGroup( groupGlobalName );
     //
     // alle Einstellungen leeren
     //
@@ -353,4 +363,8 @@ namespace radioalert
     guiTheme = value;
   }
 
+  qint64 GlobalConfig::getConfigTimestampMs() const
+  {
+    return configTimestamp;
+  }
 }  // namespace radioalert

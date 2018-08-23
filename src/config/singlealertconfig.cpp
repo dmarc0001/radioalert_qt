@@ -2,7 +2,9 @@
 
 namespace radioalert
 {
-  SingleAlertConfig::SingleAlertConfig( void ) : alertIsBusy( false )
+  SingleAlertConfig::SingleAlertConfig( void )
+      : alertRaiseVol( false ), alertVolume( 10 ), alertEnable( false ), alertDuration( 600 ), alertIsBusy( false )
+
   {
   }
 
@@ -77,12 +79,12 @@ namespace radioalert
     alertDevices = value;
   }
 
-  QString SingleAlertConfig::getSourceAccount() const
+  QString SingleAlertConfig::getAlertSourceAccount() const
   {
     return sourceAccount;
   }
 
-  void SingleAlertConfig::setSourceAccount( const QString &value )
+  void SingleAlertConfig::setAlertSourceAccount( const QString &value )
   {
     sourceAccount = value;
   }

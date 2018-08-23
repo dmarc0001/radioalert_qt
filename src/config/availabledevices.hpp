@@ -21,7 +21,7 @@ namespace radioalert
     QString hostName;
     qint16 httpPort;
     qint16 wsPort;
-    QString deviceTyype;
+    QString deviceType;
     QString deviceName;
     QString deviceId;
   };

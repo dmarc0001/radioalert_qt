@@ -54,8 +54,8 @@ namespace radioalert
     void setAlertVolume( const qint8 &value );
     QStringList getAlertDevices() const;
     void setAlertDevices( const QStringList &value );
-    QString getSourceAccount() const;
-    void setSourceAccount( const QString &value );
+    QString getAlertSourceAccount() const;
+    void setAlertSourceAccount( const QString &value );
     QString getAlertNote() const;
     void setAlertNote( const QString &value );
     bool getAlertEnable() const;
