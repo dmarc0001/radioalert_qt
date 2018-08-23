@@ -19,6 +19,7 @@
 #include "global_config.hpp"
 #include "logging/logger.hpp"
 #include "singleradioalert.hpp"
+#include "udpcontrolprocess.hpp"
 #include "utils/configfilenotexistexception.hpp"
 
 namespace radioalert
@@ -50,6 +51,7 @@ namespace radioalert
     QTimer configZyclon;
     QTimer availDevicesZyclon;
     std::shared_ptr< AppConfigClass > appConfig;
+    std::unique_ptr< UdpControlProcess > udpProc;
     static const QString version;
     std::shared_ptr< Logger > lg;
     QDateTime lastModifiedConfig;

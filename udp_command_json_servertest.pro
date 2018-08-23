@@ -10,6 +10,7 @@ CONFIG                                 -= app_bundle
 CONFIG                                 += stl
 CONFIG                                 += c++11
 CONFIG                                 += console
+TARGET                                 = udp_command_test
 
 TEMPLATE                               = app
 MOC_DIR                                = moc
