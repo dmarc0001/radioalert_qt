@@ -244,7 +244,7 @@ namespace radioalert
           LGWARN( "no availible devices for this alert!" );
         }
       }
-#endif
+#else
       // ist ein datum gesetzt, und ist es heute?
       if ( ali->getAlertDate().isValid() && isAlertDateToday( ali->getAlertDate() ) )
       {
@@ -279,20 +279,23 @@ namespace radioalert
         // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
         //
         LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
-        // TODO: implementieren
-        /*
-        ali->setAlertIsBusy( true );
-        RadioAlertThread *newAlert = new RadioAlertThread( lg, *ali, avStDevices, this );
-        // in die Liste der Threads
-        activeThreads.append( newAlert );
-        // verbinde die Endemeldung des Thread mit dem Slot
-        connect( newAlert, &RadioAlertThread::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
-        // und die Selbstzerstörung einleiten, wenn Thread endet
-        connect( newAlert, &RadioAlertThread::finished, newAlert, &RadioAlertThread::deleteLater );
-        // Thread starten
-        newAlert->start();
-        newAlert->startTimer( 1000 );
-        */
+        try
+        {
+          SingleAlertConfig alrt( *ali );
+          // erzeuge ein Alarmobjekt
+          SingleRadioAlert *newAlert = new SingleRadioAlert( lg, alrt, avStDevices, this );
+          // in die Liste der Threads
+          activeAlerts.append( newAlert );
+          // verbinde die Endemeldung des Thread mit dem Slot
+          connect( newAlert, &SingleRadioAlert::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
+          // Timer hier auch dran binden
+          connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
+          newAlert->start();
+        }
+        catch ( NoAvailibleSoundDeviceException ex )
+        {
+          LGWARN( "no availible devices for this alert!" );
+        }
       }
       else
       {
@@ -302,6 +305,7 @@ namespace radioalert
         // LGDEBUG( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
         ali->setAlertIsBusy( false );
       }
+#endif
     }
   }
 
