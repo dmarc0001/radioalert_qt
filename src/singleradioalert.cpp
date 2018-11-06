@@ -495,22 +495,25 @@ namespace radioalert
   {
     LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: check if devices availible..." );
     // Iterator für alarm Devices
-    QStringList::Iterator alDevice;
-    // QList< QString >::Iterator alDevice;
-    for ( alDevice = localAlertConfig.getAlertDevices().begin(); alDevice != localAlertConfig.getAlertDevices().end(); alDevice++ )
+    QList< QString >::Iterator alDevice;
+    QStringList caDevices = localAlertConfig.getAlertDevices();
+    for ( alDevice = caDevices.begin(); alDevice != caDevices.end(); ++alDevice )
     {
-      if ( avStDevices.contains( *alDevice ) )
+      LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: for..." );
+      const QString devString( *alDevice );
+      if ( avStDevices.contains( devString ) )
       {
         //
         // der realen Liste zufügen
         //
-        realDevices.insert( *alDevice, avStDevices.value( *alDevice ) );
+        realDevices.insert( devString, avStDevices.value( devString ) );
       }
       else
       {
         LGWARN(
             QString( "SingleRadioAlert::checkIfDevicesAvailible: device %1 was not discovered in the network..." ).arg( *alDevice ) );
       }
+      LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: for...OK" );
     }
     LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: done." );
     //
