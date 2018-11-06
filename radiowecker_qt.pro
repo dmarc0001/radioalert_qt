@@ -50,10 +50,10 @@ CONFIG(release, debug|release) {
   # raspi oder lokal
   contains(CONFIG, RASPI) {
     message( RASPI BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-RASPIGCC
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-RASPIGCC
   } else {
     message( LOCAL BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-GCC-64
   }
   LIBS                                 += -lsoundtouch_qt
   DEFINES                              += QT_NO_DEBUG_OUTPUT
@@ -63,10 +63,10 @@ CONFIG(debug, debug|release) {
   # raspi oder lokal
   contains(CONFIG, RASPI) {
     message( RASPI BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-RASPIGCC
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-RASPIGCC
   } else {
     message( LOCAL BUILD )
-    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5110-GCC-64
+    LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-GCC-64
   }
   #LIBS                                 += -lsoundtouch_debug_qt
   LIBS                                 += -lsoundtouch_qt
