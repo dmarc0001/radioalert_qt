@@ -244,66 +244,77 @@ namespace radioalert
           LGWARN( "no availible devices for this alert!" );
         }
       }
-#else
-      // ist ein datum gesetzt, und ist es heute?
-      if ( ali->getAlertDate().isValid() && isAlertDateToday( ali->getAlertDate() ) )
-      {
-        // es ist heute! Teste ob die Zeit hinkommt
-        timeDiff = howFarIsAlert( ali->getAlertTime() );
-      }
-      else if ( ali->getAlertDate().isValid() )
-      {
-        // Datum Gültig, aber nicht heute, ignorieren
-        continue;
-      }
       else
       {
-        // Datum nicht angegeben, also schau mal nach der zeit
-        timeDiff = howFarIsAlert( ali->getAlertTime() );
-      }
-      //
-      // ist der alarm nicht länger als
-      // timeDiffToPast in die Vergangenheit und
-      // timeDiffToFuture in die Zukunft
-      //
-      if ( timeDiffToPast < timeDiff && timeDiff < timeDiffToFuture )
-      {
-        if ( ali->getAlertIsBusy() )
+        //
+        // im debug code das "normele" Verhalten beibehalten.
+        //
+#endif
+        // ist ein datum gesetzt, und ist es heute?
+        if ( ali->getAlertDate().isValid() && isAlertDateToday( ali->getAlertDate() ) )
         {
-          //
-          // BESETZT!
-          //
+          // es ist heute! Teste ob die Zeit hinkommt
+          timeDiff = howFarIsAlert( ali->getAlertTime() );
+        }
+        else if ( ali->getAlertDate().isValid() )
+        {
+          // Datum Gültig, aber nicht heute, ignorieren
           continue;
         }
-        //
-        // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
-        //
-        LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
-        try
+        else
         {
-          SingleAlertConfig alrt( *ali );
-          // erzeuge ein Alarmobjekt
-          SingleRadioAlert *newAlert = new SingleRadioAlert( lg, alrt, avStDevices, this );
-          // in die Liste der Threads
-          activeAlerts.append( newAlert );
-          // verbinde die Endemeldung des Thread mit dem Slot
-          connect( newAlert, &SingleRadioAlert::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
-          // Timer hier auch dran binden
-          connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
-          newAlert->start();
+          // Datum nicht angegeben, also schau mal nach der zeit
+          timeDiff = howFarIsAlert( ali->getAlertTime() );
         }
-        catch ( NoAvailibleSoundDeviceException ex )
+        //
+        // ist der alarm nicht länger als
+        // timeDiffToPast in die Vergangenheit und
+        // timeDiffToFuture in die Zukunft
+        //
+        if ( timeDiffToPast < timeDiff && timeDiff < timeDiffToFuture )
         {
-          LGWARN( "no availible devices for this alert!" );
+          if ( ali->getAlertIsBusy() )
+          {
+            //
+            // BESETZT!
+            //
+            continue;
+          }
+          //
+          // starte den Alarmthread mit einer Kopie des SigleAlertConfig...
+          //
+          LGINFO( "MainDaemon::slotZyclonTimer: start alert thread" );
+          try
+          {
+            SingleAlertConfig alrt( *ali );
+            // erzeuge ein Alarmobjekt
+            SingleRadioAlert *newAlert = new SingleRadioAlert( lg, alrt, avStDevices, this );
+            // in die Liste der Threads
+            activeAlerts.append( newAlert );
+            // verbinde die Endemeldung des Thread mit dem Slot
+            connect( newAlert, &SingleRadioAlert::sigAlertFinished, this, &MainDaemon::slotAlertFinished );
+            // Timer hier auch dran binden
+            connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
+            newAlert->start();
+          }
+          catch ( NoAvailibleSoundDeviceException ex )
+          {
+            LGWARN( "no availible devices for this alert!" );
+          }
         }
-      }
-      else
-      {
-        // ist der Alarm ausserhalb des Fensters, lösche wenigstens den Marker
-        // für "in Arbeit"
-        // Rückfallebene falls woanders etwas schief ging
-        // LGDEBUG( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
-        ali->setAlertIsBusy( false );
+        else
+        {
+          // ist der Alarm ausserhalb des Fensters, lösche wenigstens den Marker
+          // für "in Arbeit"
+          // Rückfallebene falls woanders etwas schief ging
+          // LGDEBUG( QString( "MainDaemon::slotZyclonTimer: alert %1: set busy :false" ).arg( ali->getAlertName() ) );
+          ali->setAlertIsBusy( false );
+        }
+#ifdef DEBUG
+        //
+        // im debug code das "normele" Verhalten beibehalten.
+        // das ist dann der else-Zweig
+        //
       }
 #endif
     }
