@@ -75,23 +75,23 @@ namespace radioalert
     public:
     SingleRadioAlert( std::shared_ptr< Logger > logger, SingleAlertConfig &alert, StDevicesHashList &devices, QObject *parent );
     ~SingleRadioAlert();
-    void start( void );               //! starte die Verarbeitung
-    void cancelAlert( void );         //! beende Alarm
-    void cancelAlert( QString msg );  //! beende Alarm
-    QString getAlertName( void );     //! welchen namen hat der alarm in der config
+    void start( void );                      //! starte die Verarbeitung
+    void cancelAlert( void );                //! beende Alarm
+    void cancelAlert( const QString &msg );  //! beende Alarm
+    QString getAlertName( void );            //! welchen namen hat der alarm in der config
 
     private:
-    bool checkIfDevicesAvailible( void );                     //! sind Geräte für diesen alarm verfügbar?
-    void getDeviceStartVolume( void );                        //! gib die eingestellte Lautstärke zurück, warte auf Ergebnis
-    void connectCallbacksforDevice( void );                   //! verbinde die Callbacks mit dem Gerät
-    void disconnectCallbacksforDevice( void );                //! trenne die Callbacks vom Gerät
-    void switchMasterDeviceToSource( void );                  //! schalte das Gerät zur Quelle im aktuellen alarm
-    void connectDeviceSlaves( void );                         //! verbinde Sklaven wenn vorhanden
-    void switchDeviceOff( void );                             //! schalte das Gerät AUS
-    void computeVolumeForDevice( void );                      //! Lautstärke einstellen (dimmen oder einfach ein)
-    void computeStausMsg( SharedResponsePtr response );       //! Bestätigung für eine GET Anforderung
-    void computeVolumeMsg( SharedResponsePtr response );      //! Lautstärke Nachricht verarbeiten
-    void computeNowPlayingMsg( SharedResponsePtr response );  //! Now Playing Nachricht verarbeiten
+    bool checkIfDevicesAvailible( void );                            //! sind Geräte für diesen alarm verfügbar?
+    void getDeviceStartVolume( void );                               //! gib die eingestellte Lautstärke zurück, warte auf Ergebnis
+    void connectCallbacksforDevice( void );                          //! verbinde die Callbacks mit dem Gerät
+    void disconnectCallbacksforDevice( void );                       //! trenne die Callbacks vom Gerät
+    void switchMasterDeviceToSource( void );                         //! schalte das Gerät zur Quelle im aktuellen alarm
+    void connectDeviceSlaves( void );                                //! verbinde Sklaven wenn vorhanden
+    void switchDeviceOff( void );                                    //! schalte das Gerät AUS
+    void computeVolumeForDevice( void );                             //! Lautstärke einstellen (dimmen oder einfach ein)
+    void computeStausMsg( const SharedResponsePtr &response );       //! Bestätigung für eine GET Anforderung
+    void computeVolumeMsg( const SharedResponsePtr &response );      //! Lautstärke Nachricht verarbeiten
+    void computeNowPlayingMsg( const SharedResponsePtr &response );  //! Now Playing Nachricht verarbeiten
 
     signals:
     void sigAlertFinished( SingleRadioAlert *theAlert );  //! sende Signal wenn der Alarm regilär beendet wurde
@@ -101,8 +101,8 @@ namespace radioalert
     void slotOnZyclonTimer( void );  //! der zyklische Timer
 
     private slots:
-    void slotOnRequestAnswer( SharedResponsePtr response );    //! wenn eine Antwort auf http request rein kommt
-    void slotOnNowPlayingUpdate( SharedResponsePtr respObj );  //! wenn der Spielstatus sich ändert...
+    void slotOnRequestAnswer( const SharedResponsePtr &response );    //! wenn eine Antwort auf http request rein kommt
+    void slotOnNowPlayingUpdate( const SharedResponsePtr &respObj );  //! wenn der Spielstatus sich ändert...
   };
 }  // namespace radioalert
 #endif  // SINGLERADIOALERT_HPP

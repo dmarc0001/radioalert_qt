@@ -50,7 +50,7 @@ int main( int argc, char *argv[] )
   // Schliessen der App an QCoreApplication mitteilen
   //
   QObject::connect( &daemon, &radioalert::MainDaemon::close, &a, &QCoreApplication::quit );
-  return a.exec();
+  return ( a.exec() );
 }
 
 /**

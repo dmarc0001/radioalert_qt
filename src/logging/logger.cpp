@@ -245,49 +245,4 @@ namespace radioalert
     return ( dateTime.toString( dateTimeFormat ) );
   }
 
-  /*
-  void Logger::messageOutput( QtMsgType type, const QMessageLogContext &context, const QString &msg )
-  {
-    std::string timeString = QDateTime( QDateTime::currentDateTime() ).toString( "[yyyy-MM-dd HH:mm:ss zzz]" ).toStdString();
-    QByteArray localMsg = msg.toLocal8Bit();
-    QStringList functParts;
-    QString func;
-    //
-    switch ( type )
-    {
-      case QtDebugMsg:
-        //
-        // versuche nur objekt/function
-        //
-        functParts = QString( context.function ).split( "::" );
-        if ( functParts.count() > 2 )
-        {
-          func = QString( functParts.value( functParts.count() - 2 ) )
-                     .append( "::" )
-                     .append( functParts.value( functParts.count() - 1 ) );
-        }
-        else
-          func = context.function;
-
-        fprintf( stdout, "%s DEBUG %s: %s\n", timeString.c_str(), func.toStdString().c_str(), localMsg.constData() );
-        fflush( stdout );
-        break;
-      case QtInfoMsg:
-        fprintf( stdout, "%s INFO %s\n", timeString.c_str(), localMsg.constData() );
-        break;
-      case QtWarningMsg:
-        fprintf( stdout, "%s WARNING %s\n", timeString.c_str(), localMsg.constData() );
-        break;
-      case QtCriticalMsg:
-        fprintf( stderr, "%s CRITICAL %s (%s:%u)\n", timeString.c_str(), localMsg.constData(), context.file, context.line );
-        fflush( stderr );
-        break;
-      case QtFatalMsg:
-        fprintf( stderr, "%s FATAL %s (%s:%u)\n", timeString.c_str(), localMsg.constData(), context.file, context.line );
-        fflush( stderr );
-        break;
-    }
-  }
-  */
-
 }  // namespace radioalert

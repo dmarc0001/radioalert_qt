@@ -34,7 +34,7 @@ namespace radioalert
     static const QString timeFormatToken;
 
     public:
-    explicit AlertConfig( void );
+    explicit AlertConfig( void ) = default;
     //
     bool loadSettings( QSettings &settings, RadioAlertList &alerts );
     bool saveSettings( QSettings &settings, RadioAlertList &alerts );

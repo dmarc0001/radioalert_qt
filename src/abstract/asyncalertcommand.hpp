@@ -28,7 +28,7 @@ namespace radioalert
 
     public:
     explicit AsyncAlertCommand( std::shared_ptr< Logger > logger, QObject *parent = nullptr );
-    ~AsyncAlertCommand();
+    ~AsyncAlertCommand() = default;
     void checkIfDeviceInStandby( BoseDevice *masterDevice );                      //! prüft, ob das Gerät im STANDBY ist
     void switchDeviceToSource( BoseDevice *masterDevice, const QString source );  //! Schaltet das Gerät zu einer Quelle (PRESET)
     void askForVolume( BoseDevice *masterDevice );                                //! erfragt Lautstärke des Gerätes

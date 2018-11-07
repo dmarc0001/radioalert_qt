@@ -46,14 +46,14 @@ namespace radioalert
     void requestQuit( void );  //! Fordere Ende an
 
     private:
-    void slotReadPendingDatagrams( void );                     //! empfängt Daten
-    QByteArray computeGetCommand( QJsonValue jsonVal ) const;  //! wertet GET aus
-    QByteArray computeGetAlerts( QStringList &alerts ) const;  //! bearbeitet alarm rquests
-    QByteArray computeGetGlobalConfig( void ) const;           //! globale Onfiguration erstellen
-    QByteArray computeGetDevices( void ) const;                //! verfügbare Geräte zusammenstellen
-    QByteArray computeGetNew( void ) const;                    //! bearbeite die Anforderung nach einem neuen alarm
-    QByteArray computeSetCommand( QJsonValue jsonVal ) const;  //! wertet SET aus
-    QByteArray computeDelCommand( QJsonValue jsonVal ) const;  //! wertet DEL aus
+    void slotReadPendingDatagrams( void );                            //! empfängt Daten
+    QByteArray computeGetCommand( const QJsonValue &jsonVal ) const;  //! wertet GET aus
+    QByteArray computeGetAlerts( QStringList &alerts ) const;         //! bearbeitet alarm rquests
+    QByteArray computeGetGlobalConfig( void ) const;                  //! globale Onfiguration erstellen
+    QByteArray computeGetDevices( void ) const;                       //! verfügbare Geräte zusammenstellen
+    QByteArray computeGetNew( void ) const;                           //! bearbeite die Anforderung nach einem neuen alarm
+    QByteArray computeSetCommand( const QJsonValue &jsonVal ) const;  //! wertet SET aus
+    QByteArray computeDelCommand( const QJsonValue &jsonVal ) const;  //! wertet DEL aus
 
     signals:
     void closeUdpServer( void );

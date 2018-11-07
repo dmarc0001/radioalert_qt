@@ -25,10 +25,6 @@ namespace radioalert
   const QString AlertConfig::dateFormatToken{"yyyy-MM-dd"};
   const QString AlertConfig::timeFormatToken{"hh:mm"};
 
-  AlertConfig::AlertConfig( void )
-  {
-  }
-
   bool AlertConfig::loadSettings( QSettings &settings, RadioAlertList &alerts )
   {
     QString tempStr;
@@ -129,9 +125,16 @@ namespace radioalert
       if ( settings.value( devicesKey, QLatin1String( "" ) ).canConvert( QMetaType::QStringList ) )
       {
         vList = settings.value( devicesKey, QLatin1String( "" ) ).toStringList();
+        /*
         for ( QStringList::Iterator it = vList.begin(); it != vList.end(); it++ )
         {
           sList << ( *it );
+        }
+        */
+        // C++11
+        for ( auto &lst : vList )
+        {
+          sList << ( lst );
         }
       }
       else
@@ -183,9 +186,15 @@ namespace radioalert
       if ( settings.value( daysKey, QLatin1String( "" ) ).canConvert( QMetaType::QStringList ) )
       {
         vList = settings.value( daysKey, QLatin1String( "" ) ).toStringList();
+        /*
         for ( QStringList::Iterator it = vList.begin(); it != vList.end(); it++ )
         {
           sList << ( *it );
+        }*/
+        // C++11
+        for ( auto &lst : vList )
+        {
+          sList << ( lst );
         }
       }
       else

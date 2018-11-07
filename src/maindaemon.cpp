@@ -52,7 +52,7 @@ namespace radioalert
   /**
    * @brief MainDaemon::init
    */
-  void MainDaemon::init( void )
+  void MainDaemon::init()
   {
     LGINFO( QString( "alert daemon version: %1 started." ).arg( MainDaemon::version ) );
     LGDEBUG( QString( "override debug: %1" ).arg( isDebugOverride ) );
@@ -79,7 +79,7 @@ namespace radioalert
   /**
    * @brief MainDaemon::reReadConfigFromFile
    */
-  void MainDaemon::reReadConfigFromFile( void )
+  void MainDaemon::reReadConfigFromFile()
   {
     LGDEBUG( "MainDaemon::reReadConfigFromFile..." );
     //
@@ -104,7 +104,7 @@ namespace radioalert
   /**
    * @brief MainDaemon::requestQuit
    */
-  void MainDaemon::requestQuit( void )
+  void MainDaemon::requestQuit()
   {
     LGINFO( "MainDaemon::requestQuit..." );
     //
@@ -129,7 +129,7 @@ namespace radioalert
    * @param fileName
    * @return
    */
-  bool MainDaemon::readAvailDevices( void )
+  bool MainDaemon::readAvailDevices()
   {
     AvailableDevices tempDev;
     try
@@ -145,7 +145,7 @@ namespace radioalert
       avStDevices = tempDev.getDevicesList();
       return ( true );
     }
-    catch ( ConfigfileNotExistException ex )
+    catch ( ConfigfileNotExistException &ex )
     {
       //
       // Fehlermeldung loggen!
@@ -158,7 +158,7 @@ namespace radioalert
   /**
    * @brief MainDaemon::slotavailDevicesZyclonTimer
    */
-  void MainDaemon::slotavailDevicesZyclonTimer( void )
+  void MainDaemon::slotavailDevicesZyclonTimer()
   {
     //
     // leitet den Aufruf nur weiter....
@@ -169,7 +169,7 @@ namespace radioalert
   /**
    * @brief MainDaemon::slotZyclonTimer zyklische Abfrage der Alarme
    */
-  void MainDaemon::slotZyclonTimer( void )
+  void MainDaemon::slotZyclonTimer()
   {
     static qint32 loopcounter = 0;
     qint16 timeDiff = 0;
@@ -239,7 +239,7 @@ namespace radioalert
           connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
           newAlert->start();
         }
-        catch ( NoAvailibleSoundDeviceException ex )
+        catch ( NoAvailibleSoundDeviceException &ex )
         {
           LGWARN( "no availible devices for this alert!" );
         }
@@ -297,7 +297,7 @@ namespace radioalert
             connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
             newAlert->start();
           }
-          catch ( NoAvailibleSoundDeviceException ex )
+          catch ( NoAvailibleSoundDeviceException &ex )
           {
             LGWARN( "no availible devices for this alert!" );
           }
@@ -361,7 +361,7 @@ namespace radioalert
   /**
    * @brief MainDaemon::slotConfigZyclonTimer
    */
-  void MainDaemon::slotConfigZyclonTimer( void )
+  void MainDaemon::slotConfigZyclonTimer()
   {
     LGDEBUG( "MainDaemon::slotConfigZyclonTimer: check if config changes..." );
     //

@@ -39,7 +39,7 @@ namespace radioalert
     StDevicesHashList stDevices;      //! Liste mit Geräten
 
     public:
-    explicit AvailableDevices( void );
+    explicit AvailableDevices( void ) = default;
     bool loadSettings( const QString &fileName );
     StDevicesHashList &getDevicesList( void );
   };

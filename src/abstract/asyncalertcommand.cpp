@@ -2,11 +2,8 @@
 
 namespace radioalert
 {
-  AsyncAlertCommand::AsyncAlertCommand( std::shared_ptr< Logger > logger, QObject *parent ) : QObject( parent ), lg( logger )
-  {
-  }
-
-  AsyncAlertCommand::~AsyncAlertCommand()
+  AsyncAlertCommand::AsyncAlertCommand( std::shared_ptr< Logger > logger, QObject *parent )
+      : QObject( parent ), lg( logger ), keyresponseCounter( 0 )
   {
   }
 

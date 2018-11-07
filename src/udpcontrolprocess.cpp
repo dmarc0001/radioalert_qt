@@ -28,7 +28,7 @@ namespace radioalert
       : QObject( parent )
       , lg( logger )
       , cf( config )
-      , udpSocket( std::unique_ptr< QUdpSocket >( new QUdpSocket( this ) ) )
+      , udpSocket( std::make_unique< QUdpSocket >( new QUdpSocket( this ) ) )
       , isRunning( true )
   {
     LGINFO( QString( "UdpControlProcess::UdpControlProcess: bind on udp <%1:%2>" )
@@ -38,20 +38,20 @@ namespace radioalert
     LGINFO( "UdpControlProcess::UdpControlProcess: bind on udp OK" );
   }
 
-  void UdpControlProcess::init( void )
+  void UdpControlProcess::init()
   {
     LGDEBUG( "UdpControlProcess::start: connect signals..." );
     connect( udpSocket.get(), &QUdpSocket::readyRead, this, &UdpControlProcess::slotReadPendingDatagrams );
     LGDEBUG( "UdpControlProcess::start: OK" );
   }
 
-  void UdpControlProcess::requestQuit( void )
+  void UdpControlProcess::requestQuit()
   {
     LGINFO( "UdpControlProcess::requestQuit..." );
     //
     // Alle eventuell vorhandenen Alarme beenden
     //
-    disconnect( udpSocket.get(), 0, 0, 0 );
+    disconnect( udpSocket.get(), nullptr, nullptr, nullptr );
     udpSocket->close();
     //
     // Aufräumen dem System/ der runtime überlassen :-)
@@ -64,7 +64,7 @@ namespace radioalert
   //#### SLOTS für UDP
   //###########################################################################
 
-  void UdpControlProcess::slotReadPendingDatagrams( void )
+  void UdpControlProcess::slotReadPendingDatagrams()
   {
     LGDEBUG( "UdpControlProcess::slotRreadPendingDatagrams..." );
     while ( udpSocket->hasPendingDatagrams() )
@@ -83,18 +83,20 @@ namespace radioalert
           //
           // für alle keys machen
           //
-          for ( QStringList::iterator strId = keys.begin(); strId != keys.end(); strId++ )
+          // C++11
+          // for ( QStringList::iterator strId = keys.begin(); strId != keys.end(); strId++ )
+          for ( auto &strId : keys )
           {
-            LGDEBUG( QString( "UdpControlProcess::slotRreadPendingDatagrams -> key <%1> in json document..." ).arg( *strId ) );
+            LGDEBUG( QString( "UdpControlProcess::slotRreadPendingDatagrams -> key <%1> in json document..." ).arg( strId ) );
             //
             // welches Kommando ist hier angekommen?
             //
-            if ( cmdGet.compare( *strId ) == 0 )
+            if ( cmdGet.compare( strId ) == 0 )
             {
               //
               // Kommando GET (für einen /alle Alarme )
               //
-              QByteArray sendDatagram( computeGetCommand( bObject.value( *strId ) ) );
+              QByteArray sendDatagram( computeGetCommand( bObject.value( strId ) ) );
               //
               // return to sender
               //
@@ -103,14 +105,13 @@ namespace radioalert
                 LGDEBUG( "UdpControlProcess::slotRreadPendingDatagrams -> send answer for alert get request..." );
                 udpSocket->writeDatagram( sendDatagram, datagram.senderAddress(), datagram.senderPort() );
               }
-              return;
             }
-            else if ( cmdSet.compare( *strId ) == 0 )
+            else if ( cmdSet.compare( strId ) == 0 )
             {
               //
               // Kommando SET (für Alarm(e) )
               //
-              QByteArray sendDatagram( computeSetCommand( bObject.value( *strId ) ) );
+              QByteArray sendDatagram( computeSetCommand( bObject.value( strId ) ) );
               //
               // return to sender
               //
@@ -119,14 +120,13 @@ namespace radioalert
                 LGDEBUG( "UdpControlProcess::slotRreadPendingDatagrams -> send answer for alert set request..." );
                 udpSocket->writeDatagram( sendDatagram, datagram.senderAddress(), datagram.senderPort() );
               }
-              return;
             }
-            else if ( cmdAlertDelete.compare( *strId ) == 0 )
+            else if ( cmdAlertDelete.compare( strId ) == 0 )
             {
               //
               // Kommando DELETE (für Alarm(e)
               //
-              QByteArray sendDatagram( computeDelCommand( bObject.value( *strId ) ) );
+              QByteArray sendDatagram( computeDelCommand( bObject.value( strId ) ) );
               //
               // return to sender
               //
@@ -147,7 +147,7 @@ namespace radioalert
   //#### GET Kommandos bearbeiten
   //###########################################################################
 
-  QByteArray UdpControlProcess::computeGetCommand( QJsonValue jsonVal ) const
+  QByteArray UdpControlProcess::computeGetCommand( const QJsonValue &jsonVal ) const
   {
     //
     // ich erwarte ein array
@@ -165,9 +165,11 @@ namespace radioalert
       LGDEBUG( "UdpControlProcess::computeGetCommand -> read param array..." );
       QJsonArray arr( jsonVal.toArray() );
       QStringList commandList;
-      for ( QJsonArray::Iterator it = arr.begin(); it != arr.end(); it++ )
+      // C++11
+      // for ( QJsonArray::Iterator it = arr.begin(); it != arr.end(); it++ )
+      for ( auto &&js : arr )
       {
-        commandList.append( ( *it ).toString() );
+        commandList.append( ( js ).toString() );
       }
       //
       // ist eine "all" Anforderung für alle Alarme?
@@ -201,15 +203,17 @@ namespace radioalert
       }
       else
       {
-        for ( QStringList::iterator otIter = others.begin(); otIter != others.end(); otIter++ )
+        // C#++11
+        // for ( QStringList::iterator otIter = others.begin(); otIter != others.end(); otIter++ )
+        for ( auto &othersCmd : others )
         {
           // config-id|config|devices|new
-          QString cmd( *otIter );
-          LGDEBUG( QString( "UdpControlProcess::computeGetCommand -> get cmd: <%1>..." ).arg( cmd ) );
+          // QString cmd( ot );
+          LGDEBUG( QString( "UdpControlProcess::computeGetCommand -> get cmd: <%1>..." ).arg( othersCmd ) );
           //
           // config-version?
           //
-          if ( cmdGetConfigId.compare( cmd ) == 0 )
+          if ( cmdGetConfigId.compare( othersCmd ) == 0 )
           {
             //
             // TODO: alarme, welche arbeiten in die Liste aufnehmen
@@ -224,7 +228,7 @@ namespace radioalert
           //
           // config
           //
-          else if ( cmdGetConfig.compare( cmd ) == 0 )
+          else if ( cmdGetConfig.compare( othersCmd ) == 0 )
           {
             LGDEBUG( "UdpControlProcess::computeGetCommand -> compute get global request..." );
             return ( computeGetGlobalConfig() );
@@ -232,12 +236,12 @@ namespace radioalert
           //
           // devices (available)
           //
-          else if ( cmdGetDevices.compare( cmd ) == 0 )
+          else if ( cmdGetDevices.compare( othersCmd ) == 0 )
           {
             LGDEBUG( "UdpControlProcess::computeGetCommand -> compute get devices request..." );
             return ( computeGetDevices() );
           }
-          else if ( cmdGetNew.compare( cmd ) == 0 )
+          else if ( cmdGetNew.compare( othersCmd ) == 0 )
           {
             LGDEBUG( "UdpControlProcess::computeGetCommand -> compute get new alert request..." );
             return ( computeGetNew() );
@@ -264,12 +268,13 @@ namespace radioalert
     //
     // alle angeforderten Alarme bearbeiten
     //
-    for ( QStringList::iterator alIter = alerts.begin(); alIter != alerts.end(); alIter++ )
+    // C++11
+    // for ( QStringList::iterator alIter = alerts.begin(); alIter != alerts.end(); alIter++ )
+    for ( auto &alertName : alerts )
     {
-      QString alertName( *alIter );
+      // QString alertName( alIter );
       int alertNumber = alertName.remove( alertRootStr ).toInt();
-      alertName = *alIter;
-      LGDEBUG( QString( "UdpControlProcess::computeGetCommand -> get alert: <%1>..." ).arg( *alIter ) );
+      LGDEBUG( QString( "UdpControlProcess::computeGetCommand -> get alert: <%1>..." ).arg( alertName ) );
       LGDEBUG( QString( "UdpControlProcess::computeGetCommand -> is alert: <%1>..." ).arg( alertNumber, 2, 10, QChar( '0' ) ) );
       if ( cf->getAlertList().contains( alertName ) )
       {
@@ -309,7 +314,7 @@ namespace radioalert
     return ( retArr );
   }
 
-  QByteArray UdpControlProcess::computeGetGlobalConfig( void ) const
+  QByteArray UdpControlProcess::computeGetGlobalConfig() const
   {
     //
     // was will ich antworten?
@@ -342,7 +347,7 @@ namespace radioalert
     return ( retArr );
   }
 
-  QByteArray UdpControlProcess::computeGetDevices( void ) const
+  QByteArray UdpControlProcess::computeGetDevices() const
   {
     AvailableDevices tempDev;
     QJsonObject answerObject;
@@ -357,23 +362,25 @@ namespace radioalert
       // Objekt kopieren
       //
       StDevicesHashList avDevices = tempDev.getDevicesList();
-      for ( StDevicesHashList::iterator dListIt = avDevices.begin(); dListIt != avDevices.end(); dListIt++ )
+      // C++11
+      // for ( StDevicesHashList::iterator dListIt = avDevices.begin(); dListIt != avDevices.end(); dListIt++ )
+      for ( auto &avDevice : avDevices )
       {
         // instanziere ein lokales Objekt
         QJsonObject ajObj;
-        ajObj.insert( "id", dListIt->deviceId );
-        ajObj.insert( "name", dListIt->deviceName );
-        ajObj.insert( "type", dListIt->deviceType );
-        ajObj.insert( "host", dListIt->hostName );
-        ajObj.insert( "httpport", dListIt->httpPort );
-        ajObj.insert( "wsport", dListIt->wsPort );
-        answerObject.insert( dListIt->deviceName, ajObj );
+        ajObj.insert( "id", avDevice.deviceId );
+        ajObj.insert( "name", avDevice.deviceName );
+        ajObj.insert( "type", avDevice.deviceType );
+        ajObj.insert( "host", avDevice.hostName );
+        ajObj.insert( "httpport", avDevice.httpPort );
+        ajObj.insert( "wsport", avDevice.wsPort );
+        answerObject.insert( avDevice.deviceName, ajObj );
       }
       QJsonDocument answerDoc( answerObject );
       QByteArray retArr( answerDoc.toJson() );
       return ( retArr );
     }
-    catch ( ConfigfileNotExistException ex )
+    catch ( ConfigfileNotExistException &ex )
     {
       //
       // Fehlermeldung loggen!
@@ -384,7 +391,7 @@ namespace radioalert
     return ( QByteArray() );
   }
 
-  QByteArray UdpControlProcess::computeGetNew( void ) const
+  QByteArray UdpControlProcess::computeGetNew() const
   {
     //
     // suche einen noch freien alarmnamen raus
@@ -439,7 +446,7 @@ namespace radioalert
   //#### SET Kommandos bearbeiten
   //###########################################################################
 
-  QByteArray UdpControlProcess::computeSetCommand( QJsonValue jsonVal ) const
+  QByteArray UdpControlProcess::computeSetCommand( const QJsonValue &jsonVal ) const
   {
     //
     // ich erwarte ein array, editiere einen/mehrere vorhandenen alarm
@@ -459,17 +466,19 @@ namespace radioalert
       // get objekt ist ein Array
       // also caste zum Array
       QJsonArray alertSetArray = jsonVal.toArray();
-      for ( QJsonArray::iterator alIter = alertSetArray.begin(); alIter != alertSetArray.end(); alIter++ )
+      // C++11
+      // for ( QJsonArray::iterator alIter = alertSetArray.begin(); alIter != alertSetArray.end(); alIter++ )
+      for ( auto &&alertSet : alertSetArray )
       {
-        if ( ( *alIter ).isObject() )
+        if ( ( alertSet ).isObject() )
         {
           //
           // das ist dann (hoffentlich) ein Objekt zum Setzen von Parametern
           //
-          QJsonObject alertSet = ( *alIter ).toObject();
-          if ( alertSet.keys().contains( cmdSetAlertName ) )
+          QJsonObject alertSetObj = ( alertSet ).toObject();
+          if ( alertSetObj.keys().contains( cmdSetAlertName ) )
           {
-            QString alertName = alertSet.value( cmdSetAlertName ).toString();
+            QString alertName = alertSetObj.value( cmdSetAlertName ).toString();
             if ( alerts.contains( alertName ) )
             {
               //
@@ -480,73 +489,73 @@ namespace radioalert
               // alle durch...
               //
               // Datum
-              if ( alertSet.keys().contains( AlertConfig::dateKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::dateKey ) )
               {
                 currAlert.setAlertDate(
-                    QDate::fromString( alertSet.value( AlertConfig::dateKey ).toString(), AlertConfig::dateFormatToken ) );
+                    QDate::fromString( alertSetObj.value( AlertConfig::dateKey ).toString(), AlertConfig::dateFormatToken ) );
               }
               // Tage
-              if ( alertSet.keys().contains( AlertConfig::daysKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::daysKey ) )
               {
-                sList = alertSet.value( AlertConfig::daysKey ).toString().split( ',' );
+                sList = alertSetObj.value( AlertConfig::daysKey ).toString().split( ',' );
                 currAlert.setAlertDays( sList );
               }
               // raise vol
-              if ( alertSet.keys().contains( AlertConfig::raiseVolKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::raiseVolKey ) )
               {
-                currAlert.setAlertRaiseVol( alertSet.value( AlertConfig::raiseVolKey ).toBool() );
+                currAlert.setAlertRaiseVol( alertSetObj.value( AlertConfig::raiseVolKey ).toBool() );
               }
               // devices
-              if ( alertSet.keys().contains( AlertConfig::devicesKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::devicesKey ) )
               {
-                sList = alertSet.value( AlertConfig::devicesKey ).toString().split( ',' );
+                sList = alertSetObj.value( AlertConfig::devicesKey ).toString().split( ',' );
                 currAlert.setAlertDays( sList );
               }
               // duration
-              if ( alertSet.keys().contains( AlertConfig::durationKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::durationKey ) )
               {
-                currAlert.setAlertDuration( static_cast< qint16 >( alertSet.value( AlertConfig::durationKey ).toInt() ) );
+                currAlert.setAlertDuration( static_cast< qint16 >( alertSetObj.value( AlertConfig::durationKey ).toInt() ) );
               }
               // location
-              if ( alertSet.keys().contains( AlertConfig::locationKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::locationKey ) )
               {
-                currAlert.setAlertLocation( alertSet.value( AlertConfig::locationKey ).toString() );
+                currAlert.setAlertLocation( alertSetObj.value( AlertConfig::locationKey ).toString() );
               }
               // alert enable
-              if ( alertSet.keys().contains( AlertConfig::alertEnableKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::alertEnableKey ) )
               {
-                currAlert.setAlertRaiseVol( alertSet.value( AlertConfig::alertEnableKey ).toBool() );
+                currAlert.setAlertRaiseVol( alertSetObj.value( AlertConfig::alertEnableKey ).toBool() );
               }
               // Alarm type
-              if ( alertSet.keys().contains( AlertConfig::typeKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::typeKey ) )
               {
-                currAlert.setAlertType( alertSet.value( AlertConfig::typeKey ).toString() );
+                currAlert.setAlertType( alertSetObj.value( AlertConfig::typeKey ).toString() );
               }
               // alarm volume
-              if ( alertSet.keys().contains( AlertConfig::volumeKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::volumeKey ) )
               {
-                currAlert.setAlertVolume( static_cast< qint8 >( alertSet.value( AlertConfig::volumeKey ).toInt() ) );
+                currAlert.setAlertVolume( static_cast< qint8 >( alertSetObj.value( AlertConfig::volumeKey ).toInt() ) );
               }
               // alarm bemerkung
-              if ( alertSet.keys().contains( AlertConfig::noteKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::noteKey ) )
               {
-                currAlert.setAlertNote( alertSet.value( AlertConfig::noteKey ).toString() );
+                currAlert.setAlertNote( alertSetObj.value( AlertConfig::noteKey ).toString() );
               }
               // alarm Zeit
-              if ( alertSet.keys().contains( AlertConfig::timeKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::timeKey ) )
               {
                 currAlert.setAlertTime(
-                    QTime::fromString( alertSet.value( AlertConfig::timeKey ).toString(), AlertConfig::timeFormatToken ) );
+                    QTime::fromString( alertSetObj.value( AlertConfig::timeKey ).toString(), AlertConfig::timeFormatToken ) );
               }
               // alarm radio source
-              if ( alertSet.keys().contains( AlertConfig::sourceKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::sourceKey ) )
               {
-                currAlert.setAlertSource( alertSet.value( AlertConfig::sourceKey ).toString() );
+                currAlert.setAlertSource( alertSetObj.value( AlertConfig::sourceKey ).toString() );
               }
               // alarm radio source account (amazon, linkedin etc)
-              if ( alertSet.keys().contains( AlertConfig::sourceAccountKey ) )
+              if ( alertSetObj.keys().contains( AlertConfig::sourceAccountKey ) )
               {
-                currAlert.setAlertSourceAccount( alertSet.value( AlertConfig::sourceAccountKey ).toString() );
+                currAlert.setAlertSourceAccount( alertSetObj.value( AlertConfig::sourceAccountKey ).toString() );
               }
             }
           }
@@ -583,7 +592,7 @@ namespace radioalert
   //#### DELETE Kommandos bearbeiten
   //###########################################################################
 
-  QByteArray UdpControlProcess::computeDelCommand( QJsonValue jsonVal ) const
+  QByteArray UdpControlProcess::computeDelCommand( const QJsonValue &jsonVal ) const
   {
     //
     // ich erwarte ein array, editiere einen/mehrere vorhandenen alarm
@@ -602,14 +611,16 @@ namespace radioalert
       // also caste zum Array
       //
       QJsonArray alertDelArray = jsonVal.toArray();
-      for ( QJsonArray::iterator alIter = alertDelArray.begin(); alIter != alertDelArray.end(); alIter++ )
+      // C++11
+      // for ( QJsonArray::iterator alIter = alertDelArray.begin(); alIter != alertDelArray.end(); alIter++ )
+      for ( auto &&alIter : alertDelArray )
       {
-        if ( ( *alIter ).isString() )
+        if ( ( alIter ).isString() )
         {
           //
           // hier ist der alarmname zum löschen
           //
-          QString alertName = ( *alIter ).toString();
+          QString alertName = ( alIter ).toString();
           if ( alerts.contains( alertName ) )
           {
             LGDEBUG( QString( "UdpControlProcess::computeDelCommand -> remove <%1> from config..." ).arg( alertName ) );

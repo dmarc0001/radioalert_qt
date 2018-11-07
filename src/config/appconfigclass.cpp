@@ -14,7 +14,7 @@ namespace radioalert
    * @brief LoggerClass::LoggerClass Der Konstruktor mit Name der Konfigdatei im Programmverzeichnis
    * @param cfg
    */
-  AppConfigClass::AppConfigClass( void ) : configFileName( QCoreApplication::applicationName().append( QLatin1String( ".ini" ) ) )
+  AppConfigClass::AppConfigClass() : configFileName( QCoreApplication::applicationName().append( QLatin1String( ".ini" ) ) )
   {
   }
 
@@ -25,7 +25,7 @@ namespace radioalert
   /**
    * @brief AppConfigClass::~AppConfigClass
    */
-  AppConfigClass::~AppConfigClass( void )
+  AppConfigClass::~AppConfigClass()
   {
     qDebug().noquote() << QLatin1String( "..." );
     saveSettings();
@@ -35,7 +35,7 @@ namespace radioalert
    * @brief AppConfigClass::getLogfileName
    * @return
    */
-  QString AppConfigClass::getLogfileName( void ) const
+  QString AppConfigClass::getLogfileName() const
   {
     return ( globalConfig.getLogFile() );
   }
@@ -54,7 +54,7 @@ namespace radioalert
    * @brief LoggerClass::loadSettings Lade Einstellungen aus der Datei
    * @return
    */
-  bool AppConfigClass::loadSettings( void )
+  bool AppConfigClass::loadSettings()
   {
     // Locken während die config geladen wird
     QMutexLocker locker( &configLocker );
@@ -94,7 +94,7 @@ namespace radioalert
    * @brief LoggerClass::saveSettings sichere Einstellunge in Datei
    * @return
    */
-  bool AppConfigClass::saveSettings( void )
+  bool AppConfigClass::saveSettings()
   {
     // Locken während die config gesichert wird
     QMutexLocker locker( &configLocker );
@@ -122,7 +122,7 @@ namespace radioalert
    * @brief AppConfigClass::isConfigChanged
    * @return
    */
-  bool AppConfigClass::isConfigChanged( void )
+  bool AppConfigClass::isConfigChanged()
   {
     if ( configHashLoad == makeConfigHash() )
       return ( false );
@@ -133,7 +133,7 @@ namespace radioalert
    * @brief AppConfigClass::isConfigFileChanged
    * @return
    */
-  bool AppConfigClass::isConfigFileChanged( void )
+  bool AppConfigClass::isConfigFileChanged()
   {
     if ( configFileHash == makeConfigfileHash() )
       return ( false );
@@ -144,7 +144,7 @@ namespace radioalert
    * @brief AppConfigClass::makeConfigHash
    * @return
    */
-  QByteArray AppConfigClass::makeConfigHash( void )
+  QByteArray AppConfigClass::makeConfigHash()
   {
     // config während Ausführung sperren
     // QMutexLocker locker( &configLocker );
@@ -170,7 +170,7 @@ namespace radioalert
    * @brief AppConfigClass::getConfigfileHash
    * @return
    */
-  QByteArray AppConfigClass::makeConfigfileHash( void )
+  QByteArray AppConfigClass::makeConfigfileHash()
   {
     // config während ausführung sperren
     // QMutexLocker locker( &configLocker );
@@ -191,7 +191,7 @@ namespace radioalert
    * @brief AppConfigClass::getGlobalConfig
    * @return
    */
-  GlobalConfig &AppConfigClass::getGlobalConfig( void )
+  GlobalConfig &AppConfigClass::getGlobalConfig()
   {
     // sperren bis abgeschlossen
     QMutexLocker locker( &configLocker );
@@ -202,7 +202,7 @@ namespace radioalert
    * @brief AppConfigClass::getAlertList
    * @return
    */
-  RadioAlertList &AppConfigClass::getAlertList( void )
+  RadioAlertList &AppConfigClass::getAlertList()
   {
     // sperren bis abgeschlossen
     QMutexLocker locker( &configLocker );
@@ -213,7 +213,7 @@ namespace radioalert
    * @brief AppConfigClass::getLockMutexPtr
    * @return
    */
-  QMutex *AppConfigClass::getLockMutexPtr( void )
+  QMutex *AppConfigClass::getLockMutexPtr()
   {
     return ( &configLocker );
   }

@@ -13,10 +13,6 @@ namespace radioalert
   const QString AvailableDevices::deviceName{"name"};
   const QString AvailableDevices::deviceId{"id"};
 
-  AvailableDevices::AvailableDevices( void )
-  {
-  }
-
   /**
    * @brief AvailablaDevices::loadSettings
    * @param fileName
@@ -102,7 +98,7 @@ namespace radioalert
    * @brief AvailableDevices::getDevicesList
    * @return
    */
-  StDevicesHashList &AvailableDevices::getDevicesList( void )
+  StDevicesHashList &AvailableDevices::getDevicesList()
   {
     // Config locken, während der aktion
     QMutexLocker locker( &configLocker );
