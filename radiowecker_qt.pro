@@ -53,6 +53,8 @@ CONFIG(release, debug|release) {
     LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-RASPIGCC
   } else {
     message( LOCAL BUILD )
+    # benutze ccache
+    QMAKE_CXX                          = ccache g++
     LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-GCC-64
   }
   LIBS                                 += -lsoundtouch_qt
@@ -66,6 +68,8 @@ CONFIG(debug, debug|release) {
     LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-RASPIGCC
   } else {
     message( LOCAL BUILD )
+    # benutze ccache
+    QMAKE_CXX                          = ccache g++
     LIBS                               += -L$${LIBSOUNDTOUCHDIR}/lib/QT-5112-GCC-64
   }
   #LIBS                                 += -lsoundtouch_debug_qt
