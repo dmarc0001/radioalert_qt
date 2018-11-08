@@ -6,7 +6,7 @@
 
 MAJOR                                  = 0
 MINOR                                  = 1
-PATCH                                  = 10
+PATCH                                  = 11
 BUILD                                  = 0
 
 LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
@@ -114,5 +114,6 @@ HEADERS += \
 
 DISTFILES += \
     alert_daemon.ini \
-    available_devices.ini
+    available_devices.ini \
+    test/udpClient.py
 

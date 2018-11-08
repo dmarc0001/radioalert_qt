@@ -571,6 +571,7 @@ namespace radioalert
     connect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, [=]( SharedResponsePtr respObj ) {
       auto *volObj = dynamic_cast< WsVolumeUpdated * >( respObj.get() );
       currentVolume = volObj->getActualVolume();
+      LGWARN( "################# volume callback ##################" );
       if ( oldVolume == -1 )
       {
         oldVolume = currentVolume;
