@@ -64,7 +64,6 @@ namespace radioalert
    */
   void SingleRadioAlert::slotOnZyclonTimer()
   {
-    // TODO: Überwachung des Ablaufes...
     alertLoopCounter++;
     if ( lg->isDebug() )
     {
@@ -485,7 +484,6 @@ namespace radioalert
    */
   void SingleRadioAlert::cancelAlert( const QString &msg )
   {
-    // TODO: alarm beenden, Radio evtl abschalten
     LGINFO( QString( "cancelAlert -> " ).append( msg ) );
     isActive = false;
     disconnectCallbacksforDevice();
@@ -590,7 +588,6 @@ namespace radioalert
       }
       if ( currentVolume != sendVolume )
       {
-        // TODO: Testen ob das klappt
         if ( !isUserVolumeAction )
         {
           isUserVolumeAction = true;
