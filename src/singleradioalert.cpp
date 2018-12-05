@@ -412,7 +412,7 @@ namespace radioalert
             disconnect( &( this->waitForTimer ), nullptr, nullptr, nullptr );
             LGDEBUG( "raise volume: reached!" );
             this->waitForTimer.stop();
-            this->disconnectCallbacksforDevice();
+            // this->disconnectCallbacksforDevice();
           }
         } );
         waitForTimer.start( DIMMERTIMEVELUE );
@@ -478,6 +478,7 @@ namespace radioalert
     // TODO: alarm beenden, Radio evtl abschalten
     qWarning().nospace().noquote() << "################ cancel alert: <" << msg << "> ##################";
     isActive = false;
+    disconnectCallbacksforDevice();
     masterDevice->disconnect();
     emit sigAlertResultError( msg );
   }
@@ -571,7 +572,6 @@ namespace radioalert
     connect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, [=]( SharedResponsePtr respObj ) {
       auto *volObj = dynamic_cast< WsVolumeUpdated * >( respObj.get() );
       currentVolume = volObj->getActualVolume();
-      LGWARN( "################# volume callback ##################" );
       if ( oldVolume == -1 )
       {
         oldVolume = currentVolume;
@@ -662,9 +662,15 @@ namespace radioalert
     }
   }
 
-  void SingleRadioAlert::slotOnNowPlayingUpdate( const SharedResponsePtr & /*respObj*/ )
+  void SingleRadioAlert::slotOnNowPlayingUpdate( const SharedResponsePtr &respObj )
   {
-    // WsNowPlayingUpdate *nowPlayObj = static_cast< WsNowPlayingUpdate * >( respObj.get() );
+    WsNowPlayingUpdate *nowPlayObj = static_cast< WsNowPlayingUpdate * >( respObj.get() );
+    LGDEBUG( QString( "SingleRadioAlert::slotOnNowPlayingUpdate: playstate: %1" ).arg( nowPlayObj->getSource() ) );
+    if ( nowPlayObj->getSource() == "STANDBY" )
+    {
+      LGWARN( "SingleRadioAlert::slotOnNowPlayingUpdate: device has switched off, CANCEL Alert!" );
+      cancelAlert( "device switched off by user..." );
+    }
     //
     // Abspielstatus?
     // TODO: wird umgeschaltet, alarm beenden

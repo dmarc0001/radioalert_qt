@@ -6,7 +6,7 @@
 
 MAJOR                                  = 0
 MINOR                                  = 1
-PATCH                                  = 11
+PATCH                                  = 12
 BUILD                                  = 0
 
 LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
