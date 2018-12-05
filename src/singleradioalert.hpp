@@ -81,7 +81,7 @@ namespace radioalert
     QString getAlertName( void );            //! welchen namen hat der alarm in der config
 
     private:
-    bool checkIfDevicesAvailible( void );                            //! sind Geräte für diesen alarm verfügbar?
+    bool checkIfDevicesAvailable( void );                            //! sind Geräte für diesen alarm verfügbar?
     void getDeviceStartVolume( void );                               //! gib die eingestellte Lautstärke zurück, warte auf Ergebnis
     void connectCallbacksforDevice( void );                          //! verbinde die Callbacks mit dem Gerät
     void disconnectCallbacksforDevice( void );                       //! trenne die Callbacks vom Gerät

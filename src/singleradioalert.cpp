@@ -39,7 +39,7 @@ namespace radioalert
     // Voraussetzungen prüfen
     // sind das/die angeorderten gerät(e) verfügbar?
     //
-    if ( !checkIfDevicesAvailible() )
+    if ( !checkIfDevicesAvailable() )
     {
       isActive = false;
       throw NoAvailibleSoundDeviceException( QLatin1String( "no available devices for alert!" ) );
@@ -66,11 +66,17 @@ namespace radioalert
   {
     // TODO: Überwachung des Ablaufes...
     alertLoopCounter++;
-    LGINFO( QString( "SingleRadioAlert::slotOnZyclonTimer: alert %1 loop <%2> duration <%3> sec, active: %4" )
-                .arg( localAlertConfig.getAlertName() )
-                .arg( alertLoopCounter, 8, 10, QChar( '0' ) )
-                .arg( alertDuration, 4, 10, QChar( '0' ) )
-                .arg( isActive ) );
+    if ( lg->isDebug() )
+    {
+      if ( alertDuration % 10 == 0 || alertDuration < 10 )
+      {
+        LGDEBUG( QString( "SingleRadioAlert::slotOnZyclonTimer -> alert %1 loop <%2> duration <%3> sec, active: %4" )
+                     .arg( localAlertConfig.getAlertName() )
+                     .arg( alertLoopCounter, 8, 10, QChar( '0' ) )
+                     .arg( alertDuration, 4, 10, QChar( '0' ) )
+                     .arg( isActive ) );
+      }
+    }
     //
     // läuft der Alarm noch?
     //
@@ -119,15 +125,15 @@ namespace radioalert
         else if ( masterDeviceStat == deviceStatus::ALERT_IS_ENDING )
         {
           // hier geht es lang, wenn ich noch dimme
-          LGDEBUG(
-              QString( "SingleRadioAlert::slotOnZyclonTimer: alert %1 wait for end dimming" ).arg( localAlertConfig.getAlertName() ) );
+          LGDEBUG( QString( "SingleRadioAlert::slotOnZyclonTimer -> alert %1 wait for end dimming" )
+                       .arg( localAlertConfig.getAlertName() ) );
         }  // ende ENDING_ALERT
         else if ( masterDeviceStat == deviceStatus::ALERT_IS_FINISHED )
         {
           //
           // jetz nur noch ausschalten
           //
-          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: alert regulay ending..." );
+          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer -> alert regulay ending..." );
           switchDeviceOff();
           return;
         }
@@ -137,7 +143,7 @@ namespace radioalert
           //
           // warten auf Abschalten
           //
-          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: wait for switch off..." );
+          LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer -> wait for switch off..." );
         }  // ende ALERT_SWITCH_OFF
         else if ( masterDeviceStat == deviceStatus::ALERT_IS_ENDET )
         {
@@ -155,7 +161,7 @@ namespace radioalert
       //
       // active ist false -> abbrechen
       //
-      LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer: alert deactivated..." );
+      LGDEBUG( "SingleRadioAlert::slotOnZyclonTimer -> alert deactivated..." );
       disconnect( masterDevice.get(), nullptr, nullptr, nullptr );
       emit sigAlertFinished( this );
     }
@@ -174,11 +180,11 @@ namespace radioalert
     // könnte auch das Einzige sein...
     //
     masterDeviceData = realDevices.take( masterDeviceName );
-    LGDEBUG( QString( "SingleRadioAlert::start: create BSoundTouchDevice, masterr device is %1..." ).arg( masterDeviceName ) );
+    LGDEBUG( QString( "SingleRadioAlert::start -> create BSoundTouchDevice, masterr device is %1..." ).arg( masterDeviceName ) );
     masterDevice = std::unique_ptr< BoseDevice >(
         new BoseDevice( masterDeviceData.hostName, masterDeviceData.wsPort, masterDeviceData.httpPort ) );
     connect( masterDevice.get(), &BoseDevice::sigOnRequestAnswer, this, &SingleRadioAlert::slotOnRequestAnswer );
-    LGDEBUG( "SingleRadioAlert::start: create BSoundTouchDevice...OK" );
+    LGDEBUG( "SingleRadioAlert::start -> create BSoundTouchDevice...OK" );
     alertDuration = localAlertConfig.getAlertDuration();
     //
     // 01:
@@ -193,7 +199,8 @@ namespace radioalert
     //
     waitForTimer.setSingleShot( true );
     connect( &waitForTimer, &QTimer::timeout, [=]() {
-      this->cancelAlert( QString( "timeout while waiting for now playing in alert %1" ).arg( localAlertConfig.getAlertName() ) );
+      this->cancelAlert( QString( "SingleRadioAlert::start -> timeout while waiting for now playing in alert %1" )
+                             .arg( localAlertConfig.getAlertName() ) );
     } );
     auto conn = std::make_shared< QMetaObject::Connection >();
     *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceIsStandby, [=]( bool isStandby ) {
@@ -211,13 +218,14 @@ namespace radioalert
         //
         this->masterDevice->getVolume();
         // zu Schritt 02
-        LGDEBUG( "SingleRadioAlert::start: device is STANDBY, go to set volume" );
+        LGDEBUG( "SingleRadioAlert::start -> device is STANDBY, go to set volume" );
         this->getDeviceStartVolume();
       }
       else
       {
         // nix ist gut
-        this->cancelAlert( QString( "device is NOT in standby Mode for alert %1" ).arg( localAlertConfig.getAlertName() ) );
+        this->cancelAlert( QString( "SingleRadioAlert::start -> device is NOT in standby Mode for alert %1" )
+                               .arg( localAlertConfig.getAlertName() ) );
       }
     } );
     //
@@ -228,7 +236,7 @@ namespace radioalert
     //
     // die Anfrage ausführen
     //
-    LGDEBUG( "SingleRadioAlert::start: check if device in Standby..." );
+    LGDEBUG( "SingleRadioAlert::start -> check if device in Standby..." );
     alertCommand->checkIfDeviceInStandby( masterDevice.get() );
   }
 
@@ -243,7 +251,8 @@ namespace radioalert
     LGDEBUG( "SingleRadioAlert::getDeviceStartVolume..." );
     waitForTimer.setSingleShot( true );
     connect( &waitForTimer, &QTimer::timeout, [=]() {
-      this->cancelAlert( QString( "timeout while waiting for get volume in alert %1" ).arg( localAlertConfig.getAlertName() ) );
+      this->cancelAlert( QString( "SingleRadioAlert::getDeviceStartVolume -> timeout while waiting for get volume in alert %1" )
+                             .arg( localAlertConfig.getAlertName() ) );
     } );
     auto conn = std::make_shared< QMetaObject::Connection >();
     *conn = connect( alertCommand.get(), &AsyncAlertCommand::sigDeviceVolume, [=]( int cVolume ) {
@@ -262,7 +271,7 @@ namespace radioalert
       // weiter zu Schritt 03
       //
       this->masterDeviceStat = deviceStatus::DEVICE_STANDBY;
-      LGDEBUG( "SingleRadioAlert::getDeviceStartVolume: set volume OK, now switch source on device..." );
+      LGDEBUG( "SingleRadioAlert::getDeviceStartVolume -> set volume OK, now switch source on device..." );
       this->switchMasterDeviceToSource();
     } );
     //
@@ -324,7 +333,9 @@ namespace radioalert
     //
     waitForTimer.setSingleShot( true );
     connect( &waitForTimer, &QTimer::timeout, [=]() {
-      this->cancelAlert( QString( "timeout while waiting for switch to source in alert %1" ).arg( localAlertConfig.getAlertName() ) );
+      this->cancelAlert(
+          QString( "SingleRadioAlert::switchMasterDeviceToSource -> timeout while waiting for switch to source in alert %1" )
+              .arg( localAlertConfig.getAlertName() ) );
     } );
     //
     // um den Erfolg abzuwenden müsste man den timer stoppen
@@ -344,7 +355,7 @@ namespace radioalert
     if ( realDevices.count() > 0 )
     {
       masterDeviceStat = deviceStatus::DEVICE_INIT_GROUP;
-      LGDEBUG( "SingleRadioAlert::connectDeviceSlaves: build an zone for play..." );
+      LGDEBUG( "SingleRadioAlert::connectDeviceSlaves -> build an zone for play..." );
       //
       // versuche 04a, Gruppenbildung...
       // Gruppe bilden
@@ -383,9 +394,7 @@ namespace radioalert
     //
     // Callbacks einrichten, Websocket verbinden
     //
-    LGDEBUG( "SingleRadioAlert::computeVolumeForDevice: connect ws callbacks..." );
     connectCallbacksforDevice();
-    LGDEBUG( "SingleRadioAlert::computeVolumeForDevice: connect ws callbacks...OK" );
     //
     if ( !isUserVolumeAction )
     {
@@ -395,7 +404,7 @@ namespace radioalert
       //
       if ( localAlertConfig.getAlertRaiseVol() )
       {
-        LGDEBUG( "raise volume: started!" );
+        LGDEBUG( "SingleRadioAlert::computeVolumeForDevice -> raise volume: started!" );
         waitForTimer.setSingleShot( false );
         sendVolume = 0;
         this->masterDevice->setVolume( ++sendVolume );
@@ -410,9 +419,8 @@ namespace radioalert
           if ( sendVolume >= localAlertConfig.getAlertVolume() )
           {
             disconnect( &( this->waitForTimer ), nullptr, nullptr, nullptr );
-            LGDEBUG( "raise volume: reached!" );
+            LGDEBUG( "SingleRadioAlert::computeVolumeForDevice -> raise volume: reached!" );
             this->waitForTimer.stop();
-            // this->disconnectCallbacksforDevice();
           }
         } );
         waitForTimer.start( DIMMERTIMEVELUE );
@@ -433,6 +441,7 @@ namespace radioalert
     //
     // Gerät ausschalten, mit Timeout
     //
+    LGDEBUG( "SingleRadioAlert::switchDeviceOff..." );
     // markiere ausschalten
     masterDeviceStat = deviceStatus::DEVICE_IS_SWITCH_OFF;
     auto conn = std::make_shared< QMetaObject::Connection >();
@@ -450,7 +459,8 @@ namespace radioalert
     //
     waitForTimer.setSingleShot( true );
     connect( &waitForTimer, &QTimer::timeout, [=]() {
-      this->cancelAlert( QString( "timeout while waiting for switch off device alert %1" ).arg( localAlertConfig.getAlertName() ) );
+      this->cancelAlert( QString( "SingleRadioAlert::switchDeviceOff -> timeout while waiting for switch off device alert %1" )
+                             .arg( localAlertConfig.getAlertName() ) );
     } );
     //
     // um den Erfolg abzuwenden müsste man den timer stoppen
@@ -476,7 +486,7 @@ namespace radioalert
   void SingleRadioAlert::cancelAlert( const QString &msg )
   {
     // TODO: alarm beenden, Radio evtl abschalten
-    qWarning().nospace().noquote() << "################ cancel alert: <" << msg << "> ##################";
+    LGINFO( QString( "cancelAlert -> " ).append( msg ) );
     isActive = false;
     disconnectCallbacksforDevice();
     masterDevice->disconnect();
@@ -496,16 +506,16 @@ namespace radioalert
    * @brief SingleRadioAlert::checkIfDevicesAvailible
    * @return
    */
-  bool SingleRadioAlert::checkIfDevicesAvailible()
+  bool SingleRadioAlert::checkIfDevicesAvailable()
   {
-    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: check if devices availible..." );
+    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailable ->  check if devices availible..." );
     // Iterator für alarm Devices
     QList< QString >::Iterator alDevice;
     QStringList caDevices = localAlertConfig.getAlertDevices();
     for ( alDevice = caDevices.begin(); alDevice != caDevices.end(); ++alDevice )
     {
-      LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: for..." );
       const QString devString( *alDevice );
+      LGDEBUG( QString( "SingleRadioAlert::checkIfDevicesAvailable -> for " ).append( devString ) );
       if ( avStDevices.contains( devString ) )
       {
         //
@@ -515,12 +525,12 @@ namespace radioalert
       }
       else
       {
-        LGWARN(
-            QString( "SingleRadioAlert::checkIfDevicesAvailible: device %1 was not discovered in the network..." ).arg( *alDevice ) );
+        LGWARN( QString( "SingleRadioAlert::checkIfDevicesAvailable -> device %1 was not discovered in the network..." )
+                    .arg( *alDevice ) );
       }
-      LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: for...OK" );
+      LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailable -> for...OK" );
     }
-    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: done." );
+    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailable -> done." );
     //
     // Liste mit geforderten devices, die auch im Netzwerk vorhanden sind
     //
@@ -529,12 +539,13 @@ namespace radioalert
       //
       // ALARM: Keine Geräte gefunden
       //
-      LGWARN( QString( "there are none availible soundtouch devices for this request (%1:%2) in the network" )
+      LGWARN( QString( "SingleRadioAlert::checkIfDevicesAvailable -> there are none availible soundtouch devices for this request "
+                       "(%1:%2) in the network" )
                   .arg( localAlertConfig.getAlertName() )
                   .arg( localAlertConfig.getAlertDevices().join( "," ) ) );
       return ( false );
     }
-    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailible: check if devices availible...OK" );
+    LGDEBUG( "SingleRadioAlert::checkIfDevicesAvailable -> check if devices available...OK" );
     return ( true );
   }
 
@@ -557,12 +568,12 @@ namespace radioalert
     connect( masterDevice.get(), &BoseDevice::sigOnWSConnected, [=]() {
       callBackWsConnected = true;
       connectWsTrysCount = 0;  // zurücksetzten der Fehlversuche...
-      LGDEBUG( "SingleRadioAlert::connectCallbacksforDevice: device callback estabished..." );
+      LGDEBUG( "SingleRadioAlert::connectCallbacksforDevice -> device callback estabished..." );
     } );
     // geht Verbindung verloren, neu versuchen
     connect( masterDevice.get(), &BoseDevice::sigOnWSDisConnected, [=]() {
       callBackWsConnected = false;
-      LGWARN( "SingleRadioAlert::connectCallbacksforDevice: device callback connection lost..." );
+      LGWARN( "SingleRadioAlert::connectCallbacksforDevice -> device callback connection lost..." );
       // Signale wieder trennen (ergänzen, wenn mehr verbunden werden)
       this->disconnectCallbacksforDevice();
       // neu verbinden!
@@ -584,17 +595,10 @@ namespace radioalert
         {
           isUserVolumeAction = true;
           LGINFO( "user has changed the volume, not more touching volume via this alert..." );
-          LGDEBUG( QString( "current volume <%1>, sendVolume <%2>..." ).arg( currentVolume ).arg( sendVolume ) );
+          LGDEBUG( QString( "SingleRadioAlert::connectCallbacksforDevice -> current volume <%1>, sendVolume <%2>..." )
+                       .arg( currentVolume )
+                       .arg( sendVolume ) );
         }
-        //
-        // TODO: warum das?
-        // erst mal auskommentieren
-        //
-        /*
-        disconnect( &( this->waitForTimer ), 0, 0, 0 );
-        this->waitForTimer.stop();
-        this->disconnectCallbacksforDevice();
-        */
       }
     } );
     // Sender gewechselt
@@ -604,7 +608,7 @@ namespace radioalert
       if ( QString( PRESETPATTERN ).append( selObj->getDevicePresets().id ) != localAlertConfig.getAlertSource() )
       {
         this->cancelAlert( "device play selection was changed, alert cancel!" );
-        LGWARN( "SingleRadioAlert::connectCallbacksforDevice: devices selection was changed, cancel alert!" );
+        LGWARN( "SingleRadioAlert::connectCallbacksforDevice -> devices selection was changed, cancel alert!" );
         return;
       }
     } );
@@ -627,6 +631,7 @@ namespace radioalert
   void SingleRadioAlert::disconnectCallbacksforDevice()
   {
     // Signale wieder trennen (ergänzen, wenn mehr verbunden werden)
+    LGDEBUG( "SingleRadioAlert::disconnectCallbacksforDevice..." );
     disconnect( masterDevice.get(), &BoseDevice::sigOnWSConnected, nullptr, nullptr );
     disconnect( masterDevice.get(), &BoseDevice::sigOnWSDisConnected, nullptr, nullptr );
     disconnect( masterDevice.get(), &BoseDevice::sigOnVolumeUpdated, nullptr, nullptr );
@@ -642,21 +647,21 @@ namespace radioalert
     switch ( response->getResultType() )
     {
       default:
-        LGWARN( QString( "SingleRadioAlert::slotOnRequestAnswer: %1" ).arg( static_cast< int >( response->getResultType() ) ) );
+        LGWARN( QString( "SingleRadioAlert::slotOnRequestAnswer -> %1" ).arg( static_cast< int >( response->getResultType() ) ) );
         break;
 
       case ResultobjectType::R_OK:
-        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer: status" );
+        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer -> status result" );
         computeStausMsg( response );
         break;
 
       case ResultobjectType::R_VOLUME:
-        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer: volume" );
+        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer -> volume result" );
         computeVolumeMsg( response );
         break;
 
       case ResultobjectType::R_NOW_PLAYING:
-        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer: now playing" );
+        LGDEBUG( "SingleRadioAlert::slotOnRequestAnswer -> now playing result" );
         computeNowPlayingMsg( response );
         break;
     }
@@ -665,21 +670,18 @@ namespace radioalert
   void SingleRadioAlert::slotOnNowPlayingUpdate( const SharedResponsePtr &respObj )
   {
     WsNowPlayingUpdate *nowPlayObj = static_cast< WsNowPlayingUpdate * >( respObj.get() );
-    LGDEBUG( QString( "SingleRadioAlert::slotOnNowPlayingUpdate: playstate: %1" ).arg( nowPlayObj->getSource() ) );
+    LGDEBUG( QString( "SingleRadioAlert::slotOnNowPlayingUpdate -> source update: %1" ).arg( nowPlayObj->getSource() ) );
     if ( nowPlayObj->getSource() == "STANDBY" )
     {
-      LGWARN( "SingleRadioAlert::slotOnNowPlayingUpdate: device has switched off, CANCEL Alert!" );
+      LGWARN( "SingleRadioAlert::slotOnNowPlayingUpdate -> device has switched off, CANCEL Alert!" );
       cancelAlert( "device switched off by user..." );
     }
-    //
-    // Abspielstatus?
-    // TODO: wird umgeschaltet, alarm beenden
   }
 
   void SingleRadioAlert::computeStausMsg( const SharedResponsePtr &response )
   {
     auto *okObj = dynamic_cast< HttpResultOkObject * >( response.get() );
-    LGDEBUG( QString( "SingleRadioAlert::computeStausMsg: status for action recived, status: %1" ).arg( okObj->getStatus() ) );
+    LGDEBUG( QString( "SingleRadioAlert::computeStausMsg -> status for action recived, status: %1" ).arg( okObj->getStatus() ) );
   }
 
   void SingleRadioAlert::computeVolumeMsg( const SharedResponsePtr &response )
@@ -690,7 +692,7 @@ namespace radioalert
       oldVolume = volObj->getActualVolume();
     }
     currentVolume = volObj->getActualVolume();
-    LGDEBUG( QString( "SingleRadioAlert::computeVolumeMsg: recived type: VOLUME <%1>" ).arg( volObj->getActualVolume() ) );
+    LGDEBUG( QString( "SingleRadioAlert::computeVolumeMsg -> recived type: VOLUME <%1>" ).arg( volObj->getActualVolume() ) );
   }
 
   /**
@@ -701,7 +703,7 @@ namespace radioalert
   void SingleRadioAlert::computeNowPlayingMsg( const SharedResponsePtr &response )
   {
     auto *nPlayObj = dynamic_cast< HttpNowPlayingObject * >( response.get() );
-    LGDEBUG( QString( "SingleRadioAlert::computeNowPlayingMsg: recived type: SOURCE <%1>" ).arg( nPlayObj->getSource() ) );
+    LGDEBUG( QString( "SingleRadioAlert::computeNowPlayingMsg -> recived type: SOURCE <%1>" ).arg( nPlayObj->getSource() ) );
   }
 
 }  // namespace radioalert
