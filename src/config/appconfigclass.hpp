@@ -3,6 +3,7 @@
 
 #include <QCryptographicHash>
 #include <QHash>
+#include <QLockFile>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QSettings>
@@ -10,6 +11,7 @@
 #include <QVector>
 #include "../global_config.hpp"
 #include "../logging/loggingthreshold.hpp"
+#include "../utils/configfilenotexistexception.hpp"
 #include "alertconfig.hpp"
 #include "config_all.hpp"
 #include "singlealertconfig.hpp"
@@ -23,6 +25,7 @@ namespace radioalert
     static const QString constAppGroupName;   //! Gruppenname für App Einstellungen
     static const QString constAppTimeoutKey;  //! Einstellung für Watchdog
     QString configFileName;                   //! Name der Konfigurationsdatei
+    QString configLockFile;                   //! locking file
     GlobalConfig globalConfig;                //! globale Konfiguration als Objekt
     RadioAlertList alerts;                    //! Liste mit Alarmen aus der Konfig
     QMutex configLocker;                      //! verhindert gleichzeitige verändernde zugriffe auf config
@@ -30,9 +33,10 @@ namespace radioalert
     QByteArray configFileHash;                //! der Hash über die datei (veränderung feststellen)
 
     public:
-    AppConfigClass( void );                             //! Konstruktor
-    AppConfigClass( const QString &configFileName );    //! Konstruktor
-    virtual ~AppConfigClass();                          //! Destruktor
+    AppConfigClass( void );                                                            //! Konstruktor
+    AppConfigClass( const QString &_configFileName );                                  //! Konstruktor
+    AppConfigClass( const QString &_configFileName, const QString &_configLockFile );  //! Konstruktor
+    virtual ~AppConfigClass();                                                         //! Destruktor
     QByteArray makeConfigfileHash( void );              //! errechne den Hashwert der Konfigurationsdatei
     bool loadSettings( void );                          //! lade Einstellungen aus default Konfigdatei
     bool loadSettings( QString &configFile );           //! lade Einstellungen aus benannter Konfigdatei

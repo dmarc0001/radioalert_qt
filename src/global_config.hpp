@@ -12,4 +12,5 @@
 #define LGWARN( val ) lg->warn( val )
 #define LGCRIT( val ) lg->crit( val )
 
+constexpr char ConfigLockFile[]{"alert_daemon.lck"};
 #endif  // GLOBAL_CONFIG_HPP

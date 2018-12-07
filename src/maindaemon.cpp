@@ -1,5 +1,6 @@
 #include "maindaemon.hpp"
 #include <QDateTime>
+#include <QDir>
 
 // using bose_soundtoch_lib;
 
@@ -13,15 +14,17 @@ namespace radioalert
    * @param _isOverrideDebug
    * @param parent
    */
-  MainDaemon::MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent )
+  MainDaemon::MainDaemon( QString const &_configFile, const QString &_lockDir, bool _isOverrideDebug, QObject *parent )
       : QObject( parent )
       , configFile( _configFile )
+      , lockDir( _lockDir )
+      , lockFile( QString( "%1%2%3" ).arg( _lockDir ).arg( QDir::separator() ).arg( ConfigLockFile ) )
       , configFileInfo( _configFile )
       , isDebugOverride( _isOverrideDebug )
       , zyclon( this )
       , configZyclon( this )
       , availDevicesZyclon( this )
-      , appConfig( std::shared_ptr< AppConfigClass >( new AppConfigClass( _configFile ) ) )
+      , appConfig( std::shared_ptr< AppConfigClass >( new AppConfigClass( _configFile, lockFile ) ) )
   {
     if ( !configFileInfo.exists() )
     {
@@ -35,7 +38,6 @@ namespace radioalert
       ( appConfig->getGlobalConfig() ).setLoglevel( LoggingThreshold::LG_DEBUG );
     lg = std::shared_ptr< Logger >( new Logger( appConfig ) );
     lg->startLogging();
-    udpProc = std::unique_ptr< UdpControlProcess >( new UdpControlProcess( lg, appConfig ) );
   }
 
   /**
@@ -73,7 +75,6 @@ namespace radioalert
     zyclon.start( mainTimerDelay );
     configZyclon.start( checkConfigTime );
     availDevicesZyclon.start( availDevices );
-    udpProc->init();
   }
 
   /**
@@ -296,6 +297,9 @@ namespace radioalert
             // Timer hier auch dran binden
             connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
             newAlert->start();
+            //
+            // Kennzeichne als BESETZT/In Aktion
+            //
             ali->setAlertIsBusy( true );
           }
           catch ( NoAvailibleSoundDeviceException &ex )
@@ -373,7 +377,8 @@ namespace radioalert
       throw ConfigfileNotExistException( QString( "MainDaemon::slotConfigZyclonTimer -> configfile %1 not exist" ).arg( configFile ) );
     }
     //
-    // Änderung nach dem letzten Einlesen in der Konfiguration?
+    // interne Änderung nach dem letzten Einlesen in der Konfiguration?
+    // obsolet ohne UDP-Thread...
     //
     if ( appConfig->isConfigChanged() )
     {
@@ -382,21 +387,37 @@ namespace radioalert
       lastModifiedConfig = configFileInfo.lastModified();
       return;
     }
-
+    //
+    // externe Änderung der konfiguration
+    //
     QDateTime currentModificationTime = configFileInfo.lastModified();
     if ( currentModificationTime != lastModifiedConfig )
     {
       LGDEBUG(
           QString( "MainDaemon::slotConfigZyclonTimer -> current: %1" ).arg( configFileInfo.lastModified().toString( "hh:mm:ss" ) ) );
       LGINFO( "config file timestamp has changed, check config file..." );
-      if ( appConfig->isConfigFileChanged() )
+      //
+      // ist die Datei durch andere Anwendung gelockt?
+      //
+      QLockFile configLocker( lockFile );
+      if ( !configLocker.isLocked() )
       {
         //
-        // Die Checksumme hat sich geändert, also neu einlesen
+        // Datei ist nicht gelockt, ich kann sie einlesen!
         //
-        LGINFO( "config has changed, re-read config file..." );
-        reReadConfigFromFile();
-        LGINFO( "config has changed, re-read config file...done" );
+        if ( appConfig->isConfigFileChanged() )
+        {
+          //
+          // Die Checksumme hat sich geändert, also neu einlesen
+          //
+          LGINFO( "config has changed, re-read config file..." );
+          reReadConfigFromFile();
+          LGINFO( "config has changed, re-read config file...done" );
+        }
+      }
+      else
+      {
+        LGWARN( "MainDaemon::slotConfigZyclonTimer -> config file is locked by another process, wait..." );
       }
     }
     LGDEBUG( "MainDaemon::slotConfigZyclonTimer ->: check if config changes...OK" );
