@@ -28,7 +28,7 @@ namespace radioalert
       : QObject( parent )
       , lg( logger )
       , cf( config )
-      , udpSocket( std::make_unique< QUdpSocket >( new QUdpSocket( this ) ) )
+      , udpSocket( std::unique_ptr< QUdpSocket >( new QUdpSocket( this ) ) )
       , isRunning( true )
   {
     LGINFO( QString( "UdpControlProcess::UdpControlProcess: bind on udp <%1:%2>" )

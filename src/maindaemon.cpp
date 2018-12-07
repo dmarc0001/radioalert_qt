@@ -296,6 +296,7 @@ namespace radioalert
             // Timer hier auch dran binden
             connect( &zyclon, &QTimer::timeout, newAlert, &SingleRadioAlert::slotOnZyclonTimer );
             newAlert->start();
+            ali->setAlertIsBusy( true );
           }
           catch ( NoAvailibleSoundDeviceException &ex )
           {
