@@ -16,6 +16,8 @@ int main( int argc, char *argv[] )
   QCoreApplication a( argc, argv );
   QCommandLineParser parser;
   QString appName = QCoreApplication::applicationName().remove( QRegExp( "_d$" ) ).append( ".ini" );
+  QString appDir = QCoreApplication::applicationDirPath();
+  QString lockDir = appDir;
   QString configName;
 
   parser.addHelpOption();
@@ -25,15 +27,19 @@ int main( int argc, char *argv[] )
   QCommandLineOption dbgOption( {"d", "debug"}, "Debug override config [default: off]." );
   QCommandLineOption configFileOption( {"c", "config"}, QString( "special config file [default: %1]" ).arg( appName ), "config",
                                        appName );
+  QCommandLineOption configLockFileDir( {"l", "lockdir"}, QString( "directory for config lockfile [default: %1]" ).arg( appDir ),
+                                        "config_lock", appDir );
   parser.addOption( dbgOption );
   parser.addOption( configFileOption );
+  parser.addOption( configLockFileDir );
   parser.process( a );
   bool debug = parser.isSet( dbgOption );
   configName = parser.value( configFileOption );
+  lockDir = parser.value( configLockFileDir );
   //
   // das Hauptobjekt erzeugen
   //
-  radioalert::MainDaemon daemon( configName, debug );
+  radioalert::MainDaemon daemon( configName, lockDir, debug );
   //
   // Zeiger auf die Reload Funktion zuweisen, damit der Signalhandler
   // dann auch reagieren kann

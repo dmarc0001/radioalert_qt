@@ -6,7 +6,7 @@
 
 MAJOR                                  = 0
 MINOR                                  = 1
-PATCH                                  = 12
+PATCH                                  = 13
 BUILD                                  = 0
 
 LIBSOUNDTOUCHDIR                       = $$PWD/../soundtouchlib_qt
@@ -92,8 +92,7 @@ SOURCES += \
     src/logging/logger.cpp \
     src/utils/noavailiblesounddeviceexception.cpp \
     src/singleradioalert.cpp \
-    src/abstract/asyncalertcommand.cpp \
-    src/udpcontrolprocess.cpp
+    src/abstract/asyncalertcommand.cpp
 
 HEADERS += \
     src/maindaemon.hpp \
@@ -109,8 +108,7 @@ HEADERS += \
     src/logging/logger.hpp \
     src/utils/noavailiblesounddeviceexception.hpp \
     src/singleradioalert.hpp \
-    src/abstract/asyncalertcommand.hpp \
-    src/udpcontrolprocess.hpp
+    src/abstract/asyncalertcommand.hpp
 
 DISTFILES += \
     alert_daemon.ini \

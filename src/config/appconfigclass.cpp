@@ -1,9 +1,9 @@
-﻿#include <QCoreApplication>
+﻿#include "appconfigclass.hpp"
+#include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
 #include <QSettings>
-
-#include "appconfigclass.hpp"
+#include <QThread>
 
 namespace radioalert
 {
@@ -14,11 +14,18 @@ namespace radioalert
    * @brief LoggerClass::LoggerClass Der Konstruktor mit Name der Konfigdatei im Programmverzeichnis
    * @param cfg
    */
-  AppConfigClass::AppConfigClass() : configFileName( QCoreApplication::applicationName().append( QLatin1String( ".ini" ) ) )
+  AppConfigClass::AppConfigClass()
+      : configFileName( QCoreApplication::applicationName().append( QLatin1String( ".ini" ) ) ), configLockFile( ConfigLockFile )
   {
   }
 
-  AppConfigClass::AppConfigClass( const QString &configFileName ) : configFileName( configFileName )
+  AppConfigClass::AppConfigClass( const QString &_configFileName )
+      : configFileName( _configFileName ), configLockFile( ConfigLockFile )
+  {
+  }
+
+  AppConfigClass::AppConfigClass( const QString &_configFileName, const QString &_configLockFile )
+      : configFileName( _configFileName ), configLockFile( _configLockFile )
   {
   }
 
@@ -56,24 +63,64 @@ namespace radioalert
    */
   bool AppConfigClass::loadSettings()
   {
-    // Locken während die config geladen wird
-    QMutexLocker locker( &configLocker );
-
-    qDebug().noquote() << QLatin1String( "CONFIG: <" ) << configFileName << QLatin1String( ">" );
-    QSettings settings( configFileName, QSettings::IniFormat );
-    qDebug().noquote() << QLatin1String( "load settings from" ) << configFileName;
-
-    qDebug() << QLatin1String( "global settings load..." );
-    if ( !globalConfig.loadSettings( settings ) )
-      globalConfig.makeDefaultSettings( settings );
-    qDebug() << QLatin1String( "global settings load...OK" );
+    qDebug().noquote() << QLatin1String( "AppConfigClass::loadSettings..." );
+    QLockFile configLockFile( ConfigLockFile );
+    if ( configLockFile.isLocked() )
+    {
+      qWarning().noquote() << QLatin1String( "config file ist locking by another process, wait..." );
+      for ( auto i = 0; i < 10; i++ )
+      {
+        QThread::sleep( 1 );
+        if ( configLockFile.isLocked() )
+        {
+          qWarning().noquote() << QLatin1String( "config file ist locking by another process, wait..." );
+        }
+        else
+        {
+          break;
+        }
+      }
+      qCritical().noquote() << QLatin1String( "can't load config, file is locked!" );
+      throw ConfigfileNotExistException(
+          QString( "AppConfigClass::loadSettings -> configfile %1 locked!" ).arg( QString( ConfigLockFile ) ) );
+    }
     //
-    // Alarme auslesen mit lokalem Objekt
+    // OKAY nicht gelockt
     //
-    AlertConfig alConfig;
-    qDebug() << QLatin1String( "alert settings load..." );
-    alConfig.loadSettings( settings, alerts );
-    qDebug() << QLatin1String( "alert settings load...OK" );
+    qDebug().noquote() << QLatin1String( "AppConfigClass::loadSettings -> lock config file..." );
+    if ( configLockFile.lock() )
+    {
+      // config file ist gelockt...
+      // config Locken während die config geladen wird
+      QMutexLocker locker( &configLocker );
+
+      qDebug().noquote() << QLatin1String( "CONFIG: <" ) << configFileName << QLatin1String( ">" );
+      QSettings settings( configFileName, QSettings::IniFormat );
+      qDebug().noquote() << QLatin1String( "load settings from" ) << configFileName;
+
+      qDebug() << QLatin1String( "global settings load..." );
+      if ( !globalConfig.loadSettings( settings ) )
+        globalConfig.makeDefaultSettings( settings );
+      qDebug() << QLatin1String( "global settings load...OK" );
+      //
+      // Alarme auslesen mit lokalem Objekt
+      //
+      AlertConfig alConfig;
+      qDebug() << QLatin1String( "alert settings load..." );
+      alConfig.loadSettings( settings, alerts );
+      qDebug() << QLatin1String( "alert settings load...OK" );
+      //
+      // Datei entsperren
+      //
+      qDebug().noquote() << QLatin1String( "AppConfigClass::loadSettings -> unlock config file..." );
+      configLockFile.unlock();
+    }
+    else
+    {
+      qCritical().noquote() << QLatin1String( "can't load config, file can't lock!" );
+      throw ConfigfileNotExistException(
+          QString( "AppConfigClass::loadSettings -> configfile %1 can't lock!" ).arg( QString( ConfigLockFile ) ) );
+    }
     configHashLoad = makeConfigHash();
     configFileHash = makeConfigfileHash();
     return ( true );

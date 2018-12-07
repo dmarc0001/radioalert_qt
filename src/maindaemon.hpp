@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QFileInfo>
+#include <QLockFile>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QObject>
@@ -19,7 +20,6 @@
 #include "global_config.hpp"
 #include "logging/logger.hpp"
 #include "singleradioalert.hpp"
-#include "udpcontrolprocess.hpp"
 #include "utils/configfilenotexistexception.hpp"
 
 namespace radioalert
@@ -45,13 +45,14 @@ namespace radioalert
     Q_OBJECT
     private:
     QString configFile;
+    QString lockDir;
+    QString lockFile;
     QFileInfo configFileInfo;
     bool isDebugOverride;
     QTimer zyclon;
     QTimer configZyclon;
     QTimer availDevicesZyclon;
     std::shared_ptr< AppConfigClass > appConfig;
-    std::unique_ptr< UdpControlProcess > udpProc;
     static const QString version;
     std::shared_ptr< Logger > lg;
     QDateTime lastModifiedConfig;
@@ -59,7 +60,7 @@ namespace radioalert
     StDevicesHashList avStDevices;
 
     public:
-    explicit MainDaemon( QString const &_configFile, bool _isOverrideDebug, QObject *parent = nullptr );
+    explicit MainDaemon( QString const &_configFile, QString const &_lockDir, bool _isOverrideDebug, QObject *parent = nullptr );
     ~MainDaemon() override;             //! Destruktor
     void init( void );                  //! initialisiere das Programm
     void reReadConfigFromFile( void );  //! Lese config von Konfigurationsdatei
